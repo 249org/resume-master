@@ -9,7 +9,7 @@ export default function PageTitle({
 }) {
   return (
     <div>
-      <h1 className="text-secondary text-4xl font-bold">{title}</h1>
+      <h1 className="text-secondary mb-2 text-4xl font-bold">{title}</h1>
       <p>{subtitle}</p>
     </div>
   )

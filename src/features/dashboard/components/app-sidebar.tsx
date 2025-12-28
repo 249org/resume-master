@@ -47,7 +47,9 @@ export function AppSidebar() {
       icon: Settings,
     },
   ]
-  const pathname = usePathname()
+  const url = usePathname()
+  const segments = url.split('/')
+  const pathname = segments[3]
 
   return (
     <Sidebar>
@@ -57,12 +59,14 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => {
+                const segments = item.url.split('/')
+                const isActive = segments[3]
                 return (
                   <SidebarMenuItem
                     key={item.title}
                     className={
-                      pathname == item.url
-                        ? `bg-primary text-secondary hover:bg-primary/90 rounded-lg`
+                      pathname == isActive
+                        ? `bg-primary dark:text-secondary text-secondary-foreground hover:bg-primary/90 rounded-lg`
                         : 'hover:bg-sidebar-accent rounded-lg'
                     }
                   >

@@ -11,17 +11,39 @@ import { LogOut, Settings, User, CreditCard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { auth, signOutAction } from '@/lib/auth'
 import { headers } from 'next/headers'
+import Link from 'next/link'
 
 export async function UserMenu() {
   const session = await auth.api.getSession({
     headers: await headers(),
   })
+  const items = [
+    {
+      title: 'Profile',
+      url: `/users/${session?.user.id}/profile`,
+      icon: <User className="mr-2 h-4 w-4" />,
+    },
+
+    {
+      title: 'Setting',
+      url: `/users/${session?.user.id}/settings`,
+      icon: <Settings className="mr-2 h-4 w-4" />,
+    },
+    {
+      title: 'Billing',
+      url: `/users/${session?.user.id}/billing`,
+      icon: <CreditCard className="mr-2 h-4 w-4" />,
+    },
+  ]
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="relative h-8 w-8 cursor-pointer rounded-full outline-none">
           <Avatar className="h-8 w-8">
-            <AvatarImage src="https://github.com/shadcn.png" alt="@user" />
+            <AvatarImage
+              src={session?.user.image || ''}
+              alt={session?.user.name}
+            />
             <AvatarFallback>JD</AvatarFallback>
           </Avatar>
         </button>
@@ -40,21 +62,14 @@ export async function UserMenu() {
         </DropdownMenuLabel>
 
         <DropdownMenuSeparator />
-
-        <DropdownMenuItem>
-          <User className="mr-2 h-4 w-4" />
-          <span>Profile</span>
-        </DropdownMenuItem>
-
-        <DropdownMenuItem>
-          <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
-        </DropdownMenuItem>
-
-        <DropdownMenuItem>
-          <CreditCard className="mr-2 h-4 w-4" />
-          <span>Billing</span>
-        </DropdownMenuItem>
+        {items.map((item, index) => (
+          <DropdownMenuItem key={index}>
+            <Link href={item.url} className="flex">
+              {item.icon}
+              <span>{item.title}</span>
+            </Link>
+          </DropdownMenuItem>
+        ))}
 
         <DropdownMenuSeparator />
 
