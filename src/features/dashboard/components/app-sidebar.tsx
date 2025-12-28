@@ -14,38 +14,41 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
 import Credit from './credit'
-
-// Menu items.
-const items = [
-  {
-    title: 'Dashbaord',
-    url: '/dashboard',
-    icon: Home,
-  },
-  {
-    title: 'Resume Builder',
-    url: '/resume-builder',
-    icon: Hammer,
-  },
-  {
-    title: 'Analyzer History',
-    url: '/analyzer-history',
-    icon: History,
-  },
-  {
-    title: 'Job Match',
-    url: '/job-match',
-    icon: Search,
-  },
-  {
-    title: 'Settings',
-    url: '/settings',
-    icon: Settings,
-  },
-]
+import { useSession } from '@/lib/auth-client'
+import Link from 'next/link'
 
 export function AppSidebar() {
+  const userId = useSession().data?.user?.id
+  // Menu items.
+  const items = [
+    {
+      title: 'Dashbaord',
+      url: `/users/${userId}`,
+      icon: Home,
+    },
+    {
+      title: 'Resume Builder',
+      url: `/users/${userId}/resume-builder`,
+      icon: Hammer,
+    },
+    {
+      title: 'Analyzer History',
+      url: `/users/${userId}/analyzer-history`,
+      icon: History,
+    },
+    {
+      title: 'Job Match',
+      url: `/users/${userId}/job-match`,
+      icon: Search,
+    },
+    {
+      title: 'Settings',
+      url: `/users/${userId}/settings`,
+      icon: Settings,
+    },
+  ]
   const pathname = usePathname()
+
   return (
     <Sidebar>
       <SidebarContent>
@@ -53,23 +56,25 @@ export function AppSidebar() {
           <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem
-                  key={item.title}
-                  className={
-                    pathname == item.url
-                      ? `bg-primary text-secondary hover:bg-primary/90 rounded-lg`
-                      : 'hover:bg-sidebar-accent rounded-lg'
-                  }
-                >
-                  <SidebarMenuButton asChild>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span className="">{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {items.map((item) => {
+                return (
+                  <SidebarMenuItem
+                    key={item.title}
+                    className={
+                      pathname == item.url
+                        ? `bg-primary text-secondary hover:bg-primary/90 rounded-lg`
+                        : 'hover:bg-sidebar-accent rounded-lg'
+                    }
+                  >
+                    <SidebarMenuButton asChild>
+                      <Link href={item.url}>
+                        <item.icon />
+                        <span className="">{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -1,13 +1,10 @@
-import ThemeSwitch from "@/components/theme-switch";
-import Providers from "../providers";
+import ThemeSwitch from '@/components/theme-switch'
 
 export default function layout({ children }: { children: React.ReactNode }) {
   return (
     <main>
-      <Providers>
-        <ThemeSwitch />
-        {children}
-      </Providers>
+      <ThemeSwitch />
+      {children}
     </main>
-  );
+  )
 }

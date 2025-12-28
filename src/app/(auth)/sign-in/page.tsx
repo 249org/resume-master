@@ -1,6 +1,6 @@
-"use client";
+'use client'
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -8,17 +8,16 @@ import {
   CardTitle,
   CardDescription,
   CardFooter,
-} from "@/components/ui/card";
-import { useState } from "react";
-import { signIn } from "@/lib/auth-client";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/card'
+import { useState } from 'react'
+import { signIn } from '@/lib/auth-client'
+import { cn } from '@/lib/utils'
 
 export default function SignIn() {
-  const [loading, setLoading] = useState(false);
-
+  const [loading, setLoading] = useState(false)
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="max-w-md w-full">
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-lg md:text-xl">Sign In</CardTitle>
           <CardDescription className="text-xs md:text-sm">
@@ -29,29 +28,29 @@ export default function SignIn() {
           <div className="grid gap-4">
             <div
               className={cn(
-                "w-full gap-2 flex items-center",
-                "justify-between flex-col"
+                'flex w-full items-center gap-2',
+                'flex-col justify-between'
               )}
             >
               <Button
                 variant="outline"
-                className={cn("w-full gap-2")}
+                className={cn('w-full gap-2')}
                 disabled={loading}
                 onClick={async () => {
                   await signIn.social(
                     {
-                      provider: "google",
-                      callbackURL: "/dashboard",
+                      provider: 'google',
+                      callbackURL: '/dashboard',
                     },
                     {
                       onRequest: (ctx) => {
-                        setLoading(true);
+                        setLoading(true)
                       },
                       onResponse: (ctx) => {
-                        setLoading(false);
+                        setLoading(false)
                       },
                     }
-                  );
+                  )
                 }}
               >
                 <svg
@@ -81,23 +80,23 @@ export default function SignIn() {
               </Button>
               <Button
                 variant="outline"
-                className={cn("w-full gap-2")}
+                className={cn('w-full gap-2')}
                 disabled={loading}
                 onClick={async () => {
                   await signIn.social(
                     {
-                      provider: "github",
-                      callbackURL: "/dashboard",
+                      provider: 'github',
+                      callbackURL: '/users',
                     },
                     {
                       onRequest: (ctx) => {
-                        setLoading(true);
+                        setLoading(true)
                       },
                       onResponse: (ctx) => {
-                        setLoading(false);
+                        setLoading(false)
                       },
                     }
-                  );
+                  )
                 }}
               >
                 <svg
@@ -119,5 +118,5 @@ export default function SignIn() {
         <CardFooter></CardFooter>
       </Card>
     </div>
-  );
+  )
 }

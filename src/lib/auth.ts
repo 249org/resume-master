@@ -5,6 +5,8 @@ import * as schema from '@/db/schema/auth-schema';
 import { polar, checkout, portal, usage, } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
 import { nextCookies } from "better-auth/next-js";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 const polarClient = new Polar({
     accessToken: process.env.POLAR_ACCESS_TOKEN,
@@ -48,4 +50,12 @@ export const auth = betterAuth({
     ],
 
 });
+export async function signOutAction() {
+    "use server"
 
+    await auth.api.signOut({
+        headers: await headers()
+    })
+
+    redirect('/sign-in')
+}

@@ -1,4 +1,3 @@
-'use client'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,12 +9,13 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { LogOut, Settings, User, CreditCard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { signOut, useSession } from '@/lib/auth-client'
-import { useRouter } from 'next/navigation'
+import { auth, signOutAction } from '@/lib/auth'
+import { headers } from 'next/headers'
 
-export function UserMenu() {
-  const router = useRouter()
-  const session = useSession().data?.user
+export async function UserMenu() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -30,9 +30,11 @@ export function UserMenu() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm leading-none font-medium">{session?.name}</p>
+            <p className="text-sm leading-none font-medium">
+              {session?.user.name}
+            </p>
             <p className="text-muted-foreground text-xs leading-none">
-              {session?.email}
+              {session?.user.email}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -57,22 +59,13 @@ export function UserMenu() {
         <DropdownMenuSeparator />
 
         <DropdownMenuItem className="text-red-600 focus:text-red-600">
-          <Button
-            onClick={() =>
-              signOut({
-                fetchOptions: {
-                  onSuccess: () => {
-                    router.push('/sign-in')
-                  },
-                },
-              })
-            }
-            className="cursor-pointer"
-          >
-            <LogOut className="text-secondary mr-2 h-4 w-4" />
+          <form action={signOutAction} className="w-full">
+            <Button type="submit" className="w-full cursor-pointer">
+              <LogOut className="text-secondary mr-2 h-4 w-4" />
 
-            <span>Log out</span>
-          </Button>
+              <span>Log out</span>
+            </Button>
+          </form>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
