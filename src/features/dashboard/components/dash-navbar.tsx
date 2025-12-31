@@ -2,7 +2,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar'
 import { UserMenu } from './user-menu'
 import ThemeSwitch from '@/components/theme-switch'
 
-export default async function NavBar() {
+export default async function DashNavBar() {
   return (
     <section>
       <div className="flex justify-between gap-4 p-4 pl-0">

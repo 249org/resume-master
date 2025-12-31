@@ -1,9 +1,9 @@
-import ThemeSwitch from '@/components/theme-switch'
+import Navbar from '@/components/mvpblocks/navbar'
 
 export default function layout({ children }: { children: React.ReactNode }) {
   return (
     <main>
-      <ThemeSwitch />
+      <Navbar />
       {children}
     </main>
   )

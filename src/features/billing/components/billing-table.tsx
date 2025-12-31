@@ -2,7 +2,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -108,7 +107,7 @@ export function BillingTable() {
     <div>
       <Table className="">
         <TableHeader className="sticky top-0 z-10">
-          <TableRow className="bg-muted [&>*]:text-secondary sticky mb-10 rounded-lg [&>*]:text-lg [&>*]:font-bold">
+          <TableRow className="[&>*]:text-secondary sticky mb-10 rounded-lg [&>*]:text-lg [&>*]:font-bold">
             <TableHead>Invoice</TableHead>
             <TableHead> Date</TableHead>
             <TableHead>Amount </TableHead>
@@ -131,6 +130,7 @@ export function BillingTable() {
                   <StatusLabel />
                 </Status>
               </TableCell>
+              <TableCell>{invoice.date}</TableCell>
             </TableRow>
           ))}
         </TableBody>
