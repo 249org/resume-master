@@ -12,7 +12,7 @@ export default function Credit() {
         <Progress value={80} />
       </CardContent>
       <CardFooter>
-        <Button className="bg-secondary text-secondary-foreground hover:text-secondary font-semiboldb w-full cursor-pointer">
+        <Button className="bg-secondary hover:bg-secondary/90 text-secondary-foreground font-semiboldb w-full cursor-pointer">
           Upgrade Plan
         </Button>
       </CardFooter>
