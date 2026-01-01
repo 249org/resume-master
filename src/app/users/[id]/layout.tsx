@@ -1,6 +1,6 @@
-import { AppSidebar } from '@/features/dashboard/components/app-sidebar'
+import { AppSidebar } from '@/components/app-sidebar'
 import { SidebarProvider } from '@/components/ui/sidebar'
-import DashNavBar from '@/features/dashboard/components/dash-navbar'
+import DashNavBar from '@/components/dash-navbar'
 
 export default function layout({ children }: { children: React.ReactNode }) {
   return (

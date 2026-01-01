@@ -1,30 +1,34 @@
-import { Button } from '@/components/ui/button'
-import { auth } from '@/lib/auth'
-import { headers } from 'next/headers'
-import Link from 'next/link'
+import Pricing from '@/components/mvpblocks/pricing'
 
 export default async function page() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  })
-
   return (
     <div>
-      <div className="flex justify-between">
-        {session && (
-          <div>
-            <Button>
-              <Link href={`/users/${session.user?.id}`}>Go to Dashbaord</Link>
-            </Button>
-          </div>
-        )}
-        <div>
-          <Button>
-            <Link href={'/sign-in'}>Log in </Link>
-          </Button>
-        </div>
-        <div></div>
+      {/* Pattern background */}
+      <div className="inset-0 -z-10 h-screen opacity-5">
+        <svg
+          className="text-foreground h-full w-full"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <defs>
+            <pattern
+              id="about-grid"
+              width="40"
+              height="40"
+              patternUnits="userSpaceOnUse"
+            >
+              <path
+                d="M 40 0 L 0 0 0 40"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1"
+              />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#about-grid)" />
+        </svg>
       </div>
+      {/* Pricing */}
+      <Pricing />
     </div>
   )
 }

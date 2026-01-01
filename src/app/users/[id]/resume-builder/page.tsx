@@ -1,4 +1,4 @@
-import PageTitle from '@/features/dashboard/components/page-title'
+import PageTitle from '@/components/page-title'
 
 export default async function page() {
   return (

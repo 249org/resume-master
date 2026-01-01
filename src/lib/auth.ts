@@ -21,6 +21,9 @@ export const auth = betterAuth({
         provider: "pg",
         schema,
     }),
+    emailAndPassword: {
+        enabled: true
+    },
     socialProviders: {
         github: {
             clientId: process.env.GITHUB_CLIENT_ID as string,
@@ -34,20 +37,26 @@ export const auth = betterAuth({
             createCustomerOnSignUp: true,
             use: [
                 checkout({
-                    products: [{
-                        productId: "6a249fde-9b3f-4c7e-8d04-b7b773005af6",
-                        slug: "basic",
-                    }],
-                    successUrl: "/dashboard",
-                    authenticatedUsersOnly: true,
-                }),
-                portal(),
-                usage(),
+                    products: [
+                        {
+                            productId: "b0dcd715-4684-4225-bc34-47ca86aecf3b",
+                            slug: "Pro" // Custom slug for easy reference in Checkout URL, e.g. /checkout/Tier-3
+                        },
+                        {
+                            productId: "7eafbde9-798a-4afb-b378-b1fa65b6d255",
+                            slug: "Basic" // Custom slug for easy reference in Checkout URL, e.g. /checkout/Tier-2
+                        },
+                        {
+                            productId: "fd5fb6c3-2da0-4a94-96a9-0aa8613719b9",
+                            slug: "Free" // Custom slug for easy reference in Checkout URL, e.g. /checkout/Free
+                        }
+                    ],
+                    successUrl: process.env.POLAR_SUCCESS_URL,
+                    authenticatedUsersOnly: true
+                })
             ],
-
-        }),
-        nextCookies(),
-    ],
+        })
+    ]
 
 });
 export async function signOutAction() {

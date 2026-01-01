@@ -86,19 +86,19 @@ export default function Navbar() {
 
           <div className="hidden items-center space-x-4 lg:flex">
             <Link
-              href="/login"
+              href="/sign-in"
               className="text-foreground hover:text-foreground/90 font-medium transition-colors duration-200"
             >
               Sign In
             </Link>
             <Link
-              href="/signup"
+              href="/sign-up"
               className="bg-primary inline-flex items-center space-x-2 rounded-full px-6 py-2.5 font-medium text-white transition-all duration-200 hover:shadow-lg"
             >
               <span>Get Started</span>
               <ArrowRight className="h-4 w-4" />
             </Link>
-            {/* <ThemeSwitch /> */}
+            <ThemeSwitch />
           </div>
           {/* Mobile menu */}
           <motion.button
@@ -137,14 +137,14 @@ export default function Navbar() {
                 ))}
                 <div className="space-y-2 px-4 py-2">
                   <Link
-                    href="/login"
+                    href="/sign-in"
                     className="text-foreground hover:bg-muted block w-full rounded-lg py-2.5 text-center font-medium transition-colors duration-200"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     Sign In
                   </Link>
                   <Link
-                    href="/signup"
+                    href="/sign-up"
                     className="bg-primary block w-full rounded-lg py-2.5 text-center font-medium text-white transition-all duration-200 hover:shadow-lg"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >

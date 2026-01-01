@@ -1,6 +1,6 @@
 import { Card, CardContent, CardFooter, CardTitle } from '@/components/ui/card'
-import { BillingBreadcrumb } from '@/features/billing/components/billing-breadcrumb'
-import PageTitle from '@/features/dashboard/components/page-title'
+import { BillingBreadcrumb } from '@/components/billing-breadcrumb'
+import PageTitle from '@/components/page-title'
 import {
   Status,
   StatusIndicator,
@@ -12,7 +12,7 @@ import Link from 'next/link'
 import { BadgeCheck, Bot, Mail } from 'lucide-react'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
-import { BillingTable } from '@/features/billing/components/billing-table'
+import { BillingTable } from '@/components/billing-table'
 
 export default async function page() {
   return (
