@@ -12,14 +12,22 @@ import {
 import { Input } from '@/components/ui/input'
 import Link from 'next/link'
 import { useState } from 'react'
-import { signIn } from '@/lib/auth-client'
+import { signIn, signUp } from '@/lib/auth-client'
 import Image from 'next/image'
+import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
 
 export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<'div'>) {
   const [loading, setLoading] = useState(false)
+  const [firstName, setFirstName] = useState('')
+  const [lastname, setLastName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+
+  const router = useRouter()
 
   return (
     <div className={cn('flex flex-col gap-3', className)} {...props}>
@@ -34,8 +42,24 @@ export function SignupForm({
                 </p>
               </div>
               <Field>
-                <FieldLabel htmlFor="name">Full Name</FieldLabel>
-                <Input id="name" type="text" placeholder="John Doe" required />
+                <FieldLabel htmlFor="name">First Name</FieldLabel>
+                <Input
+                  id="fname"
+                  type="text"
+                  placeholder="John Doe"
+                  required
+                  onChange={(e) => setFirstName(e.target.value)}
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="name">Last Name</FieldLabel>
+                <Input
+                  id="lname"
+                  type="text"
+                  placeholder="John Doe"
+                  required
+                  onChange={(e) => setLastName(e.target.value)}
+                />
               </Field>
               <Field>
                 <FieldLabel htmlFor="email">Email</FieldLabel>
@@ -44,6 +68,7 @@ export function SignupForm({
                   type="email"
                   placeholder="m@example.com"
                   required
+                  onChange={(e) => setEmail(e.target.value)}
                 />
                 <FieldDescription>
                   We&apos;ll use this to contact you. We will not share your
@@ -54,7 +79,12 @@ export function SignupForm({
                 <Field className="grid grid-cols-2 gap-4">
                   <Field>
                     <FieldLabel htmlFor="password">Password</FieldLabel>
-                    <Input id="password" type="password" required />
+                    <Input
+                      id="password"
+                      type="password"
+                      required
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="confirm-password">
@@ -68,7 +98,32 @@ export function SignupForm({
                 </FieldDescription>
               </Field>
               <Field>
-                <Button type="submit" className="cursor-pointer">
+                <Button
+                  type="submit"
+                  className="cursor-pointer"
+                  onClick={async () => {
+                    await signUp.email({
+                      email,
+                      password,
+                      name: `${firstName} ${lastname}`,
+                      callbackURL: '/dashboard',
+                      fetchOptions: {
+                        onResponse: () => {
+                          setLoading(false)
+                        },
+                        onRequest: () => {
+                          setLoading(true)
+                        },
+                        onError: (ctx) => {
+                          toast.error(ctx.error.message)
+                        },
+                        onSuccess: () => {
+                          router.push('/dashboard')
+                        },
+                      },
+                    })
+                  }}
+                >
                   Create Account
                 </Button>
               </Field>

@@ -14,12 +14,15 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { signIn } from '@/lib/auth-client'
 import Image from 'next/image'
+import { toast } from 'sonner'
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<'div'>) {
   const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
   return (
     <div className={cn('flex flex-col gap-4', className)} {...props}>
@@ -40,6 +43,7 @@ export function LoginForm({
                   type="email"
                   placeholder="m@example.com"
                   required
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </Field>
               <Field>
@@ -52,10 +56,36 @@ export function LoginForm({
                     Forgot your password?
                   </Link>
                 </div>
-                <Input id="password" type="password" required />
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  onChange={(e) => setPassword(e.target.value)}
+                />
               </Field>
               <Field>
-                <Button type="submit">Login</Button>
+                <Button
+                  type="submit"
+                  onClick={async () => {
+                    signIn.email({
+                      email,
+                      password,
+                      fetchOptions: {
+                        onResponse: () => {
+                          setLoading(false)
+                        },
+                        onRequest: () => {
+                          setLoading(true)
+                        },
+                        onError: (ctx) => {
+                          toast.error(ctx.error.message)
+                        },
+                      },
+                    })
+                  }}
+                >
+                  Login
+                </Button>
               </Field>
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                 Or continue with
@@ -125,7 +155,7 @@ export function LoginForm({
                 </Button>
               </Field>
               <FieldDescription className="text-center">
-                Don&apos;t have an account? <Link href="#">Sign up</Link>
+                Don&apos;t have an account? <Link href="/sign-up">Sign up</Link>
               </FieldDescription>
             </FieldGroup>
           </form>
