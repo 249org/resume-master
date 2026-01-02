@@ -15,6 +15,8 @@ import { useState } from 'react'
 import { signIn } from '@/lib/auth-client'
 import Image from 'next/image'
 import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
+import { APIError } from 'better-auth'
 
 export function LoginForm({
   className,
@@ -24,6 +26,36 @@ export function LoginForm({
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
+  const router = useRouter()
+
+  const handleLogin = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    try {
+      e.preventDefault()
+      signIn.email({
+        email,
+        password,
+        fetchOptions: {
+          onResponse: () => {
+            setLoading(false)
+          },
+          onRequest: () => {
+            setLoading(true)
+          },
+          onError: (ctx) => {
+            toast.error(ctx.error.message)
+          },
+          onSuccess: () => {
+            toast.success('Login seccessful')
+            router.push('/users')
+          },
+        },
+      })
+    } catch (error) {
+      if (error instanceof APIError) {
+        toast.error(error.message)
+      }
+    }
+  }
   return (
     <div className={cn('flex flex-col gap-4', className)} {...props}>
       <Card className="overflow-hidden p-0">
@@ -64,27 +96,7 @@ export function LoginForm({
                 />
               </Field>
               <Field>
-                <Button
-                  type="submit"
-                  onClick={async (e) => {
-                    e.preventDefault()
-                    signIn.email({
-                      email,
-                      password,
-                      fetchOptions: {
-                        onResponse: () => {
-                          setLoading(false)
-                        },
-                        onRequest: () => {
-                          setLoading(true)
-                        },
-                        onError: (ctx) => {
-                          toast.error(ctx.error.message)
-                        },
-                      },
-                    })
-                  }}
-                >
+                <Button type="submit" onClick={handleLogin}>
                   Login
                 </Button>
               </Field>

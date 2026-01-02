@@ -16,6 +16,7 @@ import { signIn, signUp } from '@/lib/auth-client'
 import Image from 'next/image'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { APIError } from 'better-auth'
 
 export function SignupForm({
   className,
@@ -29,6 +30,33 @@ export function SignupForm({
 
   const router = useRouter()
 
+  const handleSignup = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    try {
+      e.preventDefault()
+      await signUp.email({
+        email,
+        password,
+        name: `${firstName} ${lastname}`,
+        callbackURL: '/dashboard',
+        fetchOptions: {
+          onResponse: () => {
+            setLoading(false)
+          },
+          onRequest: () => {
+            setLoading(true)
+          },
+
+          onSuccess: () => {
+            router.push('/users')
+          },
+        },
+      })
+    } catch (error) {
+      if (error instanceof APIError) {
+        toast.error(error.message)
+      }
+    }
+  }
   return (
     <div className={cn('flex flex-col gap-3', className)} {...props}>
       <Card className="overflow-hidden p-0">
@@ -101,29 +129,7 @@ export function SignupForm({
                 <Button
                   type="submit"
                   className="cursor-pointer"
-                  onClick={async (e) => {
-                    e.preventDefault()
-                    await signUp.email({
-                      email,
-                      password,
-                      name: `${firstName} ${lastname}`,
-                      callbackURL: '/dashboard',
-                      fetchOptions: {
-                        onResponse: () => {
-                          setLoading(false)
-                        },
-                        onRequest: () => {
-                          setLoading(true)
-                        },
-                        onError: (ctx) => {
-                          toast.error(ctx.error.message)
-                        },
-                        onSuccess: () => {
-                          router.push('/dashboard')
-                        },
-                      },
-                    })
-                  }}
+                  onClick={handleSignup}
                 >
                   Create Account
                 </Button>

@@ -44,7 +44,7 @@ export async function UserMenu() {
               src={session?.user.image || ''}
               alt={session?.user.name}
             />
-            <AvatarFallback>JD</AvatarFallback>
+            <AvatarFallback>{session?.user.name.slice()[0]}</AvatarFallback>
           </Avatar>
         </button>
       </DropdownMenuTrigger>
@@ -73,10 +73,10 @@ export async function UserMenu() {
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem className="text-red-600 focus:text-red-600">
+        <DropdownMenuItem className="text-red-600 hover:bg-none focus:text-red-600">
           <form action={signOutAction} className="w-full">
             <Button type="submit" className="w-full cursor-pointer">
-              <LogOut className="text-secondary mr-2 h-4 w-4" />
+              <LogOut className="dark:text-secondary text-secondary-foreground mr-2 h-4 w-4" />
 
               <span>Log out</span>
             </Button>
