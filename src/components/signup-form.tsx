@@ -101,7 +101,8 @@ export function SignupForm({
                 <Button
                   type="submit"
                   className="cursor-pointer"
-                  onClick={async () => {
+                  onClick={async (e) => {
+                    e.preventDefault()
                     await signUp.email({
                       email,
                       password,

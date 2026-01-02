@@ -66,7 +66,8 @@ export function LoginForm({
               <Field>
                 <Button
                   type="submit"
-                  onClick={async () => {
+                  onClick={async (e) => {
+                    e.preventDefault()
                     signIn.email({
                       email,
                       password,
