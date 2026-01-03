@@ -1,7 +1,6 @@
 import ProgressUpload from '@/components/file-upload/progress-upload'
-import { Status, StatusLabel, StatusIndicator } from '@/components/hero-badge'
+import { Status, StatusIndicator } from '@/components/hero-badge'
 import Pricing from '@/components/mvpblocks/pricing'
-import { Badge } from '@/components/ui/badge'
 
 export default async function page() {
   return (

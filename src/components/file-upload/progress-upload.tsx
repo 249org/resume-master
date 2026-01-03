@@ -31,7 +31,6 @@ import {
   VideoIcon,
   XIcon,
 } from 'lucide-react'
-import { toAbsoluteUrl } from '@/lib/helpers'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 
