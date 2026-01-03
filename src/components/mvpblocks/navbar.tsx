@@ -34,7 +34,7 @@ export default function Navbar() {
 
   return (
     <motion.header
-      className="z-50 border-0 duration-300 lg:border-b"
+      className="bg-background z-50 border-0 duration-300 lg:border-b"
       transition={{ duration: 0.3, ease: 'easeInOut' }}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
