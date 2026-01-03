@@ -6,7 +6,6 @@ import {
   StatusIndicator,
   StatusLabel,
 } from '@/components/kibo-ui/status'
-import { CreditCard } from '@/components/kibo-ui/credit-card'
 import BillingCard from '@/components/kibo-ui/credit-card/billing-card'
 import Link from 'next/link'
 import { BadgeCheck, Bot, Mail } from 'lucide-react'
