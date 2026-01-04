@@ -139,6 +139,8 @@
     0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
   --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
   --tracking-normal: 0em;
+  --container-padding: 2rem;
+  --container-max-width: 1400px;
 }
 
 .dark {
@@ -213,5 +215,11 @@
   body {
     @apply bg-background text-foreground;
     letter-spacing: var(--tracking-normal);
+  }
+}
+@layer utilities {
+  .container {
+    padding: var(--container-padding);
+    max-width: var(--container-max-width);
   }
 }

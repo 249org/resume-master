@@ -1,6 +1,8 @@
 import ProgressUpload from '@/components/file-upload/progress-upload'
 import { Status, StatusIndicator } from '@/components/hero-badge'
 import Pricing from '@/components/mvpblocks/pricing'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { BrainCircuit, FileChartPie, FileCode } from 'lucide-react'
 
 export default async function page() {
   return (
@@ -30,7 +32,7 @@ export default async function page() {
         </svg>
       </div>
       {/* hero */}
-      <section className="z-10 my-16 flex flex-col items-center justify-center">
+      <section className="z-10 my-16 flex w-full flex-col items-center justify-center">
         <Status status="online" className="bg-secondary-foreground">
           <StatusIndicator />
           UPDATED FOR 2026 HIRING TRENDS
@@ -46,6 +48,59 @@ export default async function page() {
           (ATS). Upload your resume below for a free score analysis
         </p>
         <ProgressUpload className="bg-secondary-foreground mt-10" />
+      </section>
+
+      {/* Toolkit */}
+      <section className="bg-background container my-16">
+        <h2 className="text-4xl font-semibold">Your Career Toolkit</h2>
+        <p className="text-foreground my-6">
+          Everything you need to stand out in a crowded job market, powered by
+          advanced AI
+        </p>
+        <div className="flex flex-col items-center justify-between gap-3 lg:flex-row">
+          <Card>
+            <CardHeader className="flex flex-col items-start">
+              <FileChartPie
+                className="text-secondary mb-7 rounded-full bg-[#fddccc] p-2"
+                size={35}
+              />
+              <p className="text-2xl font-semibold">ATS Analysis</p>
+            </CardHeader>
+            <CardContent className="text-foreground">
+              Ensure your resume isn&apos;t automatically rejected. We scan your
+              document just like the hiring bots do.
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-col items-start">
+              <BrainCircuit
+                className="text-secondary mb-7 rounded-full bg-green-100 p-2"
+                size={35}
+              />
+
+              <p className="text-2xl font-semibold">AI-Powered Resume Review</p>
+            </CardHeader>
+            <CardContent className="text-foreground">
+              Get instant, professional feedback on your content, impact, and
+              tone--without waiting for a recruiter
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-col items-start">
+              <FileCode
+                className="text-secondary mb-7 rounded-full bg-blue-200 p-2"
+                size={35}
+              />
+              <p className="text-2xl font-semibold">
+                AI-Supported Resume Builder
+              </p>
+            </CardHeader>
+            <CardContent>
+              Create a perfectly formatted, professional resume from scratch
+              with AI writing assistance at every step
+            </CardContent>
+          </Card>
+        </div>
       </section>
       {/* Pricing */}
       <Pricing />
