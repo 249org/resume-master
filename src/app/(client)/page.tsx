@@ -2,7 +2,7 @@ import ProgressUpload from '@/components/file-upload/progress-upload'
 import { Status, StatusIndicator } from '@/components/hero-badge'
 import Pricing from '@/components/mvpblocks/pricing'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { BrainCircuit, FileChartPie, FileCode } from 'lucide-react'
+import { BrainCircuit, FileChartPie, FileCode } from '@/components/icons'
 
 export default async function page() {
   return (

@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
+import DashboardClient from './dashboard-client'
 
 export default async function Page() {
   const session = await auth.api.getSession({
@@ -9,5 +10,5 @@ export default async function Page() {
   if (!session) {
     redirect('/sign-in')
   }
-  return <div>My Post:</div>
+  return <DashboardClient userName={session.user.name} />
 }

@@ -8,12 +8,18 @@ import {
 } from '@/components/kibo-ui/status'
 import BillingCard from '@/components/kibo-ui/credit-card/billing-card'
 import Link from 'next/link'
-import { BadgeCheck, Bot, Mail } from 'lucide-react'
+import { BadgeCheck, Bot, Mail, X } from '@/components/icons'
 import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
 import { BillingTable } from '@/components/billing-table'
 
-export default async function page() {
+export default async function page({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
+
   return (
     <div>
       <BillingBreadcrumb />
@@ -69,13 +75,28 @@ export default async function page() {
           </CardContent>
           <CardFooter className="mt-3 flex flex-col border-t px-0">
             <p className="text-foreground mt-4 text-sm">
-              Need more power? Upgrade to pro paln for unlimited resume analysis
+              Need more power? Upgrade to pro plan for unlimited resume analysis
               and priority support
             </p>
-            <Button className="mt-4 mr-auto w-fit cursor-pointer p-6">
-              <BadgeCheck className="text-secondary-foreground dark:text-secondary mr-2 h-4 w-4" />
-              <span>Upgrade to pro - $19/mo</span>
-            </Button>
+            <div className="mt-4 flex items-center gap-3">
+              <Button className="w-fit cursor-pointer p-6" asChild>
+                <Link href={`/users/${id}/settings/billing/upgrade`}>
+                  <BadgeCheck className="text-secondary-foreground dark:text-secondary mr-2 h-4 w-4" />
+                  Upgrade to pro - $19/mo
+                </Link>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-foreground hover:text-destructive gap-1.5 text-sm"
+                asChild
+              >
+                <Link href={`/users/${id}/settings/billing/manage`}>
+                  <X className="h-3.5 w-3.5" />
+                  Cancel Plan
+                </Link>
+              </Button>
+            </div>
           </CardFooter>
         </Card>
 
@@ -85,8 +106,11 @@ export default async function page() {
             <h2 className="text-secondary text-2xl font-semibold">
               Payment Method
             </h2>
-            <Link href={'/update'} className="text-primary text-sm">
-              <span>Update</span>
+            <Link
+              href={`/users/${id}/settings/billing/update`}
+              className="text-primary text-sm hover:underline"
+            >
+              Update
             </Link>
           </CardTitle>
           <CardContent className="flex justify-center">

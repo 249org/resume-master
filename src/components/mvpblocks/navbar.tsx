@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, ChevronDown, ArrowRight, Sparkles } from 'lucide-react'
+import { Menu, X, ChevronDown, ArrowRight, Sparkles } from '@/components/icons'
 import Link from 'next/link'
 import ThemeSwitch from '../theme-switch'
 

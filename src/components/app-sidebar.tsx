@@ -1,5 +1,5 @@
 'use client'
-import { Hammer, Home, Search, Settings, History } from 'lucide-react'
+import { Hammer, Home, Search, Settings, History, FileText } from '@/components/icons'
 import { usePathname } from 'next/navigation'
 
 import {
@@ -30,6 +30,11 @@ export function AppSidebar() {
       title: 'Resume Builder',
       url: `/users/${userId}/resume-builder`,
       icon: Hammer,
+    },
+    {
+      title: 'My Resumes',
+      url: `/users/${userId}/resumes`,
+      icon: FileText,
     },
     {
       title: 'Analyzer History',

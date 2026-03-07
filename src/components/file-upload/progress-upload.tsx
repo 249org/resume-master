@@ -30,7 +30,7 @@ import {
   UploadIcon,
   VideoIcon,
   XIcon,
-} from 'lucide-react'
+} from '@/components/icons'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 

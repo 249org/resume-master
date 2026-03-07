@@ -7,7 +7,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { LogOut, Settings, User, CreditCard } from 'lucide-react'
+import { LogOut, Settings, User, CreditCard } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import { auth, signOutAction } from '@/lib/auth'
 import { headers } from 'next/headers'

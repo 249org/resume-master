@@ -20,6 +20,7 @@
   },
   "registries": {
     "@react-bits": "https://reactbits.dev/r/{name}.json",
-    "@reui": "https://reui.io/r/{name}.json"
+    "@reui": "https://reui.io/r/{name}.json",
+    "@lucide-animated": "https://lucide-animated.com/r/{name}.json"
   }
 }

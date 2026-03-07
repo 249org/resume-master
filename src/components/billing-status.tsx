@@ -24,17 +24,17 @@ export const StatusIndicator = ({
     <span
       className={cn(
         'absolute inline-flex h-full w-full animate-ping rounded-full opacity-75',
-        'group-[.online]:bg-emerald-500',
-        'group-[.offline]:bg-red-500',
-        'group-[.maintenance]:bg-blue-500'
+        'group-[.Paid]:bg-emerald-500',
+        'group-[.Pending]:bg-amber-500',
+        'group-[.Unpaid]:bg-red-500'
       )}
     />
     <span
       className={cn(
         'relative inline-flex h-2 w-2 rounded-full',
-        'group-[.online]:bg-emerald-500',
-        'group-[.offline]:bg-red-500',
-        'group-[.maintenance]:bg-blue-500'
+        'group-[.Paid]:bg-emerald-500',
+        'group-[.Pending]:bg-amber-500',
+        'group-[.Unpaid]:bg-red-500'
       )}
     />
   </span>
@@ -50,9 +50,9 @@ export const StatusLabel = ({
   <span className={cn('text-secondary-foreground', className)} {...props}>
     {children ?? (
       <>
-        <span className="hidden group-[.online]:block">Paid</span>
-        <span className="hidden group-[.offline]:block">Pending</span>
-        <span className="hidden group-[.maintenance]:block">Unpaid</span>
+        <span className="hidden group-[.Paid]:block">Paid</span>
+        <span className="hidden group-[.Pending]:block">Pending</span>
+        <span className="hidden group-[.Unpaid]:block">Unpaid</span>
       </>
     )}
   </span>
