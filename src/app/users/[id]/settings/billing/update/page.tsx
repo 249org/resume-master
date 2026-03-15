@@ -18,7 +18,6 @@ import {
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import PageTitle from '@/components/page-title'
-import { BillingBreadcrumb } from '@/components/billing-breadcrumb'
 import BillingCard from '@/components/kibo-ui/credit-card/billing-card'
 
 export default function UpdateBillingPage() {
@@ -52,8 +51,6 @@ export default function UpdateBillingPage() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb + Header */}
-      <BillingBreadcrumb />
       <div className="flex items-start justify-between">
         <PageTitle
           title="Update Payment Details"

@@ -1,0 +1,143 @@
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { runAtsEngine } from "@/lib/ats-engine";
+import { generateAiReport } from "@/lib/job-match/ai-report";
+import { getJobType } from "@/lib/job-types";
+import { checkRateLimit } from "@/lib/kv-rate-limit";
+import { getAiCache, setAiCache } from "@/lib/kv-cache";
+import { getDb } from "@/db/index";
+import { resumeAnalysis } from "@/db/schema/resume-analysis-schema";
+
+const MAX_RESUME_LENGTH = 50_000;
+
+export async function POST(request: Request) {
+  try {
+    const session = await auth.api.getSession({
+      headers: request.headers,
+    });
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    let body: {
+      resumeText?: unknown;
+      jobTypeId?: unknown;
+      mode?: unknown;
+      fileName?: unknown;
+    };
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON body" },
+        { status: 400 }
+      );
+    }
+
+    const resumeText =
+      typeof body.resumeText === "string" ? body.resumeText.trim() : "";
+    const jobTypeId =
+      typeof body.jobTypeId === "string" ? body.jobTypeId.trim() : "";
+    const mode = body.mode === "ats" ? "ats" : "ai";
+    const fileName =
+      typeof body.fileName === "string" && body.fileName.trim()
+        ? body.fileName.trim()
+        : "Resume";
+
+    if (!resumeText || resumeText.length < 100) {
+      return NextResponse.json(
+        {
+          error:
+            "resumeText is required and must be at least 100 characters",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!jobTypeId) {
+      return NextResponse.json(
+        { error: "jobTypeId is required" },
+        { status: 400 }
+      );
+    }
+
+    const jobType = getJobType(jobTypeId);
+    if (jobType == null) {
+      return NextResponse.json(
+        { error: "Invalid jobTypeId" },
+        { status: 400 }
+      );
+    }
+
+    // Per-user hourly rate limit (5 AI / 20 ATS per hour)
+    const allowed = await checkRateLimit(session.user.id, mode);
+    if (!allowed) {
+      return NextResponse.json(
+        {
+          error: `Rate limit exceeded. You can run up to ${mode === "ai" ? 5 : 20} ${mode.toUpperCase()} analyses per hour.`,
+        },
+        { status: 429 }
+      );
+    }
+
+    const sanitizedText =
+      resumeText.length > MAX_RESUME_LENGTH
+        ? resumeText.slice(0, MAX_RESUME_LENGTH)
+        : resumeText;
+
+    const atsReport = runAtsEngine(sanitizedText, jobTypeId);
+
+    // Only call OpenAI when mode is 'ai'
+    let aiReport = null;
+    let aiError = null;
+    if (mode === "ai") {
+      // Check KV cache before calling OpenAI
+      const cached = await getAiCache(sanitizedText, jobTypeId);
+      if (cached) {
+        aiReport = cached;
+      } else {
+        const aiResult = await generateAiReport(
+          sanitizedText,
+          jobTypeId,
+          atsReport
+        );
+        if (aiResult.ok) {
+          aiReport = aiResult.report;
+          // Store in cache for 24 hours
+          await setAiCache(sanitizedText, jobTypeId, aiResult.report);
+        } else {
+          aiError = aiResult.error;
+        }
+      }
+    }
+
+    const analysisId = crypto.randomUUID();
+    const now = new Date();
+    const db = getDb();
+    await db.insert(resumeAnalysis).values({
+      id: analysisId,
+      userId: session.user.id,
+      fileName,
+      jobTypeId,
+      jobTypeLabel: jobType.label,
+      mode,
+      atsReportJson: atsReport ? JSON.stringify(atsReport) : null,
+      aiReportJson: aiReport ? JSON.stringify(aiReport) : null,
+      aiError: aiError ?? null,
+      createdAt: now,
+    });
+
+    return NextResponse.json({
+      atsReport,
+      aiReport,
+      analysisId,
+      ...(aiError && { aiError }),
+    });
+  } catch (err) {
+    console.error("job-match/analyze error:", err);
+    return NextResponse.json(
+      { error: "An error occurred while analyzing your resume." },
+      { status: 500 }
+    );
+  }
+}

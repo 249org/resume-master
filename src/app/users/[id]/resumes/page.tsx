@@ -13,22 +13,13 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
   Download,
   Plus,
   Search,
   Trash2,
-  MoreHorizontal,
   FileText,
   Wrench,
 } from '@/components/icons'
-import { BillingBreadcrumb } from '@/components/billing-breadcrumb'
 import PageTitle from '@/components/page-title'
 import {
   getAllResumes,
@@ -114,8 +105,6 @@ export default function ResumesPage() {
   // ── Render ─────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
-      <BillingBreadcrumb />
-
       <div className="flex items-start justify-between gap-4">
         <PageTitle
           title="My Resumes"
@@ -171,7 +160,7 @@ export default function ResumesPage() {
             return (
               <div
                 key={resume.id}
-                className="bg-accent group flex flex-col overflow-hidden rounded-xl border transition-shadow hover:shadow-md"
+                className="bg-accent flex flex-col overflow-hidden rounded-xl border transition-shadow hover:shadow-md"
               >
                 {/* Thumbnail */}
                 <div className="relative h-36 w-full overflow-hidden bg-white">
@@ -182,54 +171,13 @@ export default function ResumesPage() {
                   )}
                   {/* Accent color bar at top */}
                   <div className="absolute top-0 left-0 right-0 h-1" style={{ background: accent }} />
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/0 opacity-0 transition-all group-hover:bg-black/20 group-hover:opacity-100">
-                    <Button size="sm" className="gap-1 text-xs shadow-lg" onClick={() => handleEdit(resume)}>
-                      <Wrench className="h-3 w-3" /> Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="gap-1 text-xs shadow-lg"
-                      onClick={() => setDownloadTarget(resume)}
-                    >
-                      <Download className="h-3 w-3" /> Download
-                    </Button>
-                  </div>
                 </div>
 
                 {/* Card body */}
                 <div className="flex flex-1 flex-col gap-1 px-3 py-2.5">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-secondary truncate font-semibold leading-tight">{resume.title}</p>
-                      <p className="text-foreground truncate text-xs">{resume.fullName}{resume.jobTitle ? ` · ${resume.jobTitle}` : ''}</p>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEdit(resume)}>
-                          <Wrench className="mr-2 h-3.5 w-3.5" /> Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setDownloadTarget(resume)}>
-                          <Download className="mr-2 h-3.5 w-3.5" /> Download PDF
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openRename(resume)}>
-                          <FileText className="mr-2 h-3.5 w-3.5" /> Rename
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => setDeleteTarget(resume)}
-                        >
-                          <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                  <div className="min-w-0">
+                    <p className="text-secondary truncate font-semibold leading-tight">{resume.title}</p>
+                    <p className="text-foreground truncate text-xs">{resume.fullName}{resume.jobTitle ? ` · ${resume.jobTitle}` : ''}</p>
                   </div>
 
                   <div className="flex items-center gap-2 mt-0.5">

@@ -1,27 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 
-export async function middleware(request: NextRequest) {
-    const session = await auth.api.getSession({
-        headers: request.headers
-    })
-    const { pathname } = request.nextUrl
-    const segments = pathname.split('/')
-    const urlID = segments[2]
+// Cloudflare Workers Edge middleware cannot import better-auth because it uses
+// dynamic code evaluation. We do a lightweight cookie-presence check here for
+// fast UX redirects. Full session validation happens in each protected
+// server component / API route via auth.api.getSession().
+const SESSION_COOKIE = "better-auth.session_token";
 
-
-    if (!session) {
-        return NextResponse.redirect(new URL("/sign-in", request.url));
-    }
-
-    if (session.user.id !== urlID) {
-        return NextResponse.redirect(new URL(`/users/${session.user.id}`, request.url));
-
-    }
-    return NextResponse.next();
+export function middleware(request: NextRequest) {
+  const hasSession = request.cookies.has(SESSION_COOKIE);
+  if (!hasSession) {
+    const signIn = new URL("/sign-in", request.url);
+    signIn.searchParams.set("callbackUrl", request.nextUrl.pathname);
+    return NextResponse.redirect(signIn);
+  }
+  return NextResponse.next();
 }
 
 export const config = {
-    runtime: "nodejs",
-    matcher: ["/users/:path*"],
+  matcher: ["/users/:path*"],
 };

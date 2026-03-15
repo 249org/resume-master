@@ -37,7 +37,7 @@ export function SignupForm({
         email,
         password,
         name: `${firstName} ${lastname}`,
-        callbackURL: '/dashboard',
+        callbackURL: '/users',
         fetchOptions: {
           onResponse: () => {
             setLoading(false)
@@ -179,7 +179,7 @@ export function SignupForm({
                     await signIn.social(
                       {
                         provider: 'google',
-                        callbackURL: '/dashboard',
+                        callbackURL: '/users',
                       },
                       {
                         onRequest: () => {

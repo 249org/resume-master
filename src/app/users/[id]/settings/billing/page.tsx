@@ -1,5 +1,4 @@
 import { Card, CardContent, CardFooter, CardTitle } from '@/components/ui/card'
-import { BillingBreadcrumb } from '@/components/billing-breadcrumb'
 import PageTitle from '@/components/page-title'
 import {
   Status,
@@ -22,7 +21,6 @@ export default async function page({
 
   return (
     <div>
-      <BillingBreadcrumb />
       <PageTitle
         title="Billing & Subscriptions"
         subtitle="Manage your subscriptions, update payment methods, and download invoices"
@@ -129,9 +127,9 @@ export default async function page({
       </div>
 
       {/* Billing history card */}
-      <h1 className="text-secondary mt-10 mb-2 text-2xl font-semibold">
+      <h2 className="text-2xl font-semibold tracking-tight text-foreground mt-10 mb-2">
         Billing History
-      </h1>
+      </h2>
       <Card className="bg-accent overflow-hidden p-0">
         <CardContent className="px-0">
           <BillingTable />

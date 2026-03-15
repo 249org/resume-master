@@ -27,7 +27,6 @@ import {
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import PageTitle from '@/components/page-title'
-import { BillingBreadcrumb } from '@/components/billing-breadcrumb'
 
 const notificationSettings = [
   { id: 'email_analysis', label: 'Resume Analysis Complete', description: 'Get notified when your AI analysis finishes', defaultChecked: true },
@@ -51,8 +50,6 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb + Header */}
-      <BillingBreadcrumb />
       <div className="flex items-start justify-between">
         <PageTitle
           title="Account Settings"

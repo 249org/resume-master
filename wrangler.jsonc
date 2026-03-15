@@ -17,7 +17,25 @@
 	},
 	"observability": {
 		"enabled": true
-	}
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "resume-master-db",
+			"database_id": "fe55a33e-e4f0-4246-b829-539419cea918",
+			"migrations_dir": "drizzle"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "CACHE_KV",
+			"id": "a0dd5d634c66409194253c6798c89bce"
+		},
+		{
+			"binding": "RATE_LIMIT_KV",
+			"id": "97944472a6684be6a5a16b924c85ee23"
+		}
+	]
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

@@ -59,58 +59,88 @@ function tint(hex: string, alpha: string) {
 
 export function ClassicTheme({ data, colors }: { data: ResumeData; colors: ThemeColors }) {
   const c = colors.accent
+
+  const sectionHeader = (title: string) => (
+    <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+      <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: 0.5, marginBottom: 6 }}>{title}</div>
+      <div style={{ height: 1, background: '#1a1a1a' }} />
+    </div>
+  )
+
+  const contactItems = [data.email, data.phone, data.location, data.linkedin].filter(Boolean)
+
   return (
-    <div style={{ fontFamily: 'Georgia, serif', color: '#1a1a1a', background: '#fff', padding: '2rem', fontSize: 12 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: `2px solid ${c}`, paddingBottom: '0.75rem', marginBottom: '1rem' }}>
-        <div>
-          <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: c }}>{data.fullName || 'YOUR NAME'}</div>
-          <div style={{ fontSize: 13, color: '#555', marginTop: 2 }}>{data.jobTitle}</div>
+    <div style={{ fontFamily: 'Georgia, serif', color: '#1a1a1a', background: '#fff', padding: '2.75rem 3.25rem', fontSize: 12.5, minHeight: '297mm' }}>
+
+      {/* ── Centered header ── */}
+      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <div style={{ fontSize: 23, fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', color: c }}>
+          {data.fullName || 'YOUR NAME'}
         </div>
-        <div style={{ textAlign: 'right', fontSize: 11, color: '#555', lineHeight: 1.7 }}>
-          {data.email && <p>{data.email}</p>}
-          {data.phone && <p>{data.phone}</p>}
-          {data.location && <p>{data.location}</p>}
-          {data.linkedin && <p>{data.linkedin}</p>}
-        </div>
+        {data.jobTitle && (
+          <div style={{ fontSize: 13, color: '#444', marginTop: 5 }}>{data.jobTitle}</div>
+        )}
+        {contactItems.length > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: '5px', marginTop: 9, fontSize: 11, color: '#555' }}>
+            {contactItems.map((v, i) => (
+              <React.Fragment key={i}>
+                <span>{v}</span>
+                {i < contactItems.length - 1 && <span style={{ color: '#aaa', margin: '0 2px' }}>•</span>}
+              </React.Fragment>
+            ))}
+          </div>
+        )}
+        <div style={{ height: '1.5px', background: c, marginTop: 14 }} />
       </div>
 
+      {/* ── Experience ── */}
       {data.experiences.length > 0 && (
-        <div style={{ marginBottom: '1rem' }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', borderBottom: `1px solid ${c}`, marginBottom: '0.5rem', paddingBottom: 2, color: c }}>Experience</div>
+        <div style={{ marginBottom: '2rem' }}>
+          {sectionHeader('Experience')}
           {data.experiences.map((exp) => (
-            <div key={exp.id} style={{ marginBottom: '0.6rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <div>
-                  <span style={{ fontWeight: 700, fontSize: 12 }}>{exp.title}</span>
-                  {exp.company && <span style={{ color: '#555' }}> · {exp.company}</span>}
-                </div>
-                <div style={{ color: '#555', fontSize: 11 }}>{exp.startDate}{exp.endDate ? ` – ${exp.endDate}` : ''}{exp.location ? `, ${exp.location}` : ''}</div>
+            <div key={exp.id} style={{ marginBottom: '1.4rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <span style={{ fontSize: 12.5 }}>{exp.company}</span>
+                <span style={{ fontSize: 11, color: '#555' }}>{exp.location}</span>
               </div>
-              {exp.description && <div style={{ color: '#444', marginTop: 2, whiteSpace: 'pre-line', lineHeight: 1.5 }}>{exp.description}</div>}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 1 }}>
+                <span style={{ fontWeight: 700, fontSize: 13 }}>{exp.title}</span>
+                <span style={{ fontSize: 11, color: '#555' }}>
+                  {exp.startDate}{exp.endDate ? ` - ${exp.endDate}` : ''}
+                </span>
+              </div>
+              {exp.description && (
+                <div style={{ marginTop: 6, whiteSpace: 'pre-line', lineHeight: 1.8, fontSize: 12, color: '#333' }}>
+                  {exp.description}
+                </div>
+              )}
             </div>
           ))}
         </div>
       )}
 
+      {/* ── Education ── */}
       {data.education.length > 0 && (
-        <div style={{ marginBottom: '1rem' }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', borderBottom: `1px solid ${c}`, marginBottom: '0.5rem', paddingBottom: 2, color: c }}>Education</div>
+        <div style={{ marginBottom: '2rem' }}>
+          {sectionHeader('Education')}
           {data.education.map((edu) => (
-            <div key={edu.id} style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <div><span style={{ fontWeight: 700 }}>{edu.degree}</span>{edu.school ? <span style={{ color: '#555' }}> · {edu.school}</span> : null}</div>
-              <div style={{ color: '#555', fontSize: 11 }}>{edu.year}</div>
+            <div key={edu.id} style={{ marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <span style={{ fontSize: 12.5 }}>{edu.school}</span>
+                <span style={{ fontSize: 11, color: '#555' }}>{edu.year}</span>
+              </div>
+              <div style={{ fontWeight: 700, fontSize: 13, marginTop: 1 }}>{edu.degree}</div>
             </div>
           ))}
         </div>
       )}
 
+      {/* ── Skills ── */}
       {data.skills.length > 0 && (
         <div>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', borderBottom: `1px solid ${c}`, marginBottom: '0.5rem', paddingBottom: 2, color: c }}>Skills</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {data.skills.map((s) => (
-              <span key={s} style={{ border: `1px solid ${c}`, borderRadius: 3, padding: '1px 8px', fontSize: 11, color: c }}>{s}</span>
-            ))}
+          {sectionHeader('Skills')}
+          <div style={{ fontSize: 12, color: '#333', lineHeight: 2 }}>
+            {data.skills.join(' · ')}
           </div>
         </div>
       )}
@@ -124,11 +154,11 @@ export function OceanTheme({ data, colors }: { data: ResumeData; colors: ThemeCo
   const accent = colors.accent
   const light = tint(accent, '18')
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', color: '#1a1a1a', background: '#fff', padding: '2rem', fontSize: 12 }}>
-      <div style={{ borderLeft: `5px solid ${accent}`, paddingLeft: '1rem', marginBottom: '1.25rem' }}>
-        <div style={{ fontSize: 22, fontWeight: 800, color: accent, letterSpacing: 1 }}>{data.fullName || 'YOUR NAME'}</div>
-        <div style={{ fontSize: 13, color: '#444', marginTop: 2 }}>{data.jobTitle}</div>
-        <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: '0.75rem', fontSize: 11, color: '#555' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', color: '#1a1a1a', background: '#fff', padding: '2.5rem 3rem', fontSize: 13, minHeight: '297mm' }}>
+      <div style={{ borderLeft: `5px solid ${accent}`, paddingLeft: '1rem', marginBottom: '1.75rem' }}>
+        <div style={{ fontSize: 24, fontWeight: 800, color: accent, letterSpacing: 1 }}>{data.fullName || 'YOUR NAME'}</div>
+        <div style={{ fontSize: 13, color: '#444', marginTop: 3 }}>{data.jobTitle}</div>
+        <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: '1rem', fontSize: 11, color: '#555' }}>
           {data.email && <span>✉ {data.email}</span>}
           {data.phone && <span>✆ {data.phone}</span>}
           {data.location && <span>⌖ {data.location}</span>}
@@ -137,26 +167,26 @@ export function OceanTheme({ data, colors }: { data: ResumeData; colors: ThemeCo
       </div>
 
       {data.experiences.length > 0 && (
-        <div style={{ marginBottom: '1rem' }}>
-          <div style={{ background: accent, color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', padding: '3px 8px', marginBottom: '0.6rem' }}>Experience</div>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ background: accent, color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', padding: '4px 10px', marginBottom: '0.9rem' }}>Experience</div>
           {data.experiences.map((exp) => (
-            <div key={exp.id} style={{ marginBottom: '0.7rem', paddingLeft: 8 }}>
+            <div key={exp.id} style={{ marginBottom: '1rem', paddingLeft: 10 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontWeight: 700, color: accent }}>{exp.title}</span>
+                <span style={{ fontWeight: 700, color: accent, fontSize: 13 }}>{exp.title}</span>
                 <span style={{ color: '#666', fontSize: 11 }}>{exp.startDate}{exp.endDate ? ` – ${exp.endDate}` : ''}</span>
               </div>
-              {exp.company && <div style={{ color: '#555', fontSize: 11 }}>{exp.company}{exp.location ? `, ${exp.location}` : ''}</div>}
-              {exp.description && <div style={{ color: '#444', marginTop: 3, whiteSpace: 'pre-line', lineHeight: 1.5 }}>{exp.description}</div>}
+              {exp.company && <div style={{ color: '#555', fontSize: 11, marginTop: 1 }}>{exp.company}{exp.location ? `, ${exp.location}` : ''}</div>}
+              {exp.description && <div style={{ color: '#444', marginTop: 4, whiteSpace: 'pre-line', lineHeight: 1.7 }}>{exp.description}</div>}
             </div>
           ))}
         </div>
       )}
 
       {data.education.length > 0 && (
-        <div style={{ marginBottom: '1rem' }}>
-          <div style={{ background: accent, color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', padding: '3px 8px', marginBottom: '0.6rem' }}>Education</div>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ background: accent, color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', padding: '4px 10px', marginBottom: '0.9rem' }}>Education</div>
           {data.education.map((edu) => (
-            <div key={edu.id} style={{ paddingLeft: 8, display: 'flex', justifyContent: 'space-between' }}>
+            <div key={edu.id} style={{ paddingLeft: 10, display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
               <div><span style={{ fontWeight: 700 }}>{edu.degree}</span>{edu.school ? <span style={{ color: '#555' }}> — {edu.school}</span> : null}</div>
               <span style={{ color: '#666', fontSize: 11 }}>{edu.year}</span>
             </div>
@@ -166,10 +196,10 @@ export function OceanTheme({ data, colors }: { data: ResumeData; colors: ThemeCo
 
       {data.skills.length > 0 && (
         <div>
-          <div style={{ background: accent, color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', padding: '3px 8px', marginBottom: '0.6rem' }}>Skills</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, paddingLeft: 8 }}>
+          <div style={{ background: accent, color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', padding: '4px 10px', marginBottom: '0.9rem' }}>Skills</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, paddingLeft: 10 }}>
             {data.skills.map((s) => (
-              <span key={s} style={{ background: light, color: accent, borderRadius: 3, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{s}</span>
+              <span key={s} style={{ background: light, color: accent, borderRadius: 3, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>{s}</span>
             ))}
           </div>
         </div>
@@ -184,16 +214,16 @@ export function SidebarTheme({ data, colors }: { data: ResumeData; colors: Theme
   const sidebarBg = colors.secondary
   const accent = colors.accent
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', display: 'flex', minHeight: 420, fontSize: 12 }}>
-      <div style={{ width: '38%', background: sidebarBg, color: '#e2e8f0', padding: '1.5rem 1rem', flexShrink: 0 }}>
-        <div style={{ width: 60, height: 60, borderRadius: '50%', background: accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, color: sidebarBg, marginBottom: '0.75rem' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', display: 'flex', minHeight: '297mm', fontSize: 13 }}>
+      <div style={{ width: '36%', background: sidebarBg, color: '#e2e8f0', padding: '2rem 1.25rem', flexShrink: 0 }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', background: accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: sidebarBg, marginBottom: '1rem' }}>
           {(data.fullName || 'U')[0].toUpperCase()}
         </div>
-        <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.3, marginBottom: 4 }}>{data.fullName || 'YOUR NAME'}</div>
-        <div style={{ fontSize: 11, color: accent, marginBottom: '1rem' }}>{data.jobTitle}</div>
+        <div style={{ fontSize: 17, fontWeight: 700, lineHeight: 1.3, marginBottom: 5 }}>{data.fullName || 'YOUR NAME'}</div>
+        <div style={{ fontSize: 12, color: accent, marginBottom: '1.5rem' }}>{data.jobTitle}</div>
 
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: accent, marginBottom: 4 }}>Contact</div>
-        <div style={{ fontSize: 11, lineHeight: 2, color: '#cbd5e1', marginBottom: '1rem' }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: accent, marginBottom: 6 }}>Contact</div>
+        <div style={{ fontSize: 11, lineHeight: 2.1, color: '#cbd5e1', marginBottom: '1.5rem' }}>
           {data.email && <div>✉ {data.email}</div>}
           {data.phone && <div>✆ {data.phone}</div>}
           {data.location && <div>⌖ {data.location}</div>}
@@ -202,20 +232,20 @@ export function SidebarTheme({ data, colors }: { data: ResumeData; colors: Theme
 
         {data.skills.length > 0 && (
           <>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: accent, marginBottom: 6 }}>Skills</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: accent, marginBottom: 8 }}>Skills</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {data.skills.map((s) => (
-                <div key={s} style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 3, padding: '3px 8px', fontSize: 11 }}>{s}</div>
+                <div key={s} style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 3, padding: '4px 9px', fontSize: 11 }}>{s}</div>
               ))}
             </div>
           </>
         )}
 
         {data.education.length > 0 && (
-          <div style={{ marginTop: '1rem' }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: accent, marginBottom: 6 }}>Education</div>
+          <div style={{ marginTop: '1.5rem' }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: accent, marginBottom: 8 }}>Education</div>
             {data.education.map((edu) => (
-              <div key={edu.id} style={{ marginBottom: 8 }}>
+              <div key={edu.id} style={{ marginBottom: 12 }}>
                 <div style={{ fontSize: 11, fontWeight: 700 }}>{edu.degree}</div>
                 <div style={{ fontSize: 10, color: '#94a3b8' }}>{edu.school}</div>
                 <div style={{ fontSize: 10, color: '#64748b' }}>{edu.year}</div>
@@ -225,16 +255,16 @@ export function SidebarTheme({ data, colors }: { data: ResumeData; colors: Theme
         )}
       </div>
 
-      <div style={{ flex: 1, background: '#fff', padding: '1.5rem 1.25rem' }}>
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: sidebarBg, borderBottom: `2px solid ${accent}`, paddingBottom: 3, marginBottom: '0.75rem' }}>Experience</div>
+      <div style={{ flex: 1, background: '#fff', padding: '2rem 1.75rem' }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: sidebarBg, borderBottom: `2px solid ${accent}`, paddingBottom: 4, marginBottom: '1rem' }}>Experience</div>
         {data.experiences.map((exp) => (
-          <div key={exp.id} style={{ marginBottom: '0.75rem' }}>
+          <div key={exp.id} style={{ marginBottom: '1.1rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <span style={{ fontWeight: 700, color: sidebarBg, fontSize: 12 }}>{exp.title}</span>
+              <span style={{ fontWeight: 700, color: sidebarBg, fontSize: 13 }}>{exp.title}</span>
               <span style={{ fontSize: 10, color: '#64748b' }}>{exp.startDate}{exp.endDate ? ` – ${exp.endDate}` : ''}</span>
             </div>
-            {exp.company && <div style={{ fontSize: 11, color: '#475569' }}>{exp.company}{exp.location ? ` · ${exp.location}` : ''}</div>}
-            {exp.description && <div style={{ fontSize: 11, color: '#475569', marginTop: 3, whiteSpace: 'pre-line', lineHeight: 1.5 }}>{exp.description}</div>}
+            {exp.company && <div style={{ fontSize: 11, color: '#475569', marginTop: 1 }}>{exp.company}{exp.location ? ` · ${exp.location}` : ''}</div>}
+            {exp.description && <div style={{ fontSize: 11, color: '#475569', marginTop: 4, whiteSpace: 'pre-line', lineHeight: 1.7 }}>{exp.description}</div>}
           </div>
         ))}
       </div>
@@ -248,11 +278,11 @@ export function BoldTheme({ data, colors }: { data: ResumeData; colors: ThemeCol
   const accent = colors.accent
   const lightBg = tint(accent, '14')
   return (
-    <div style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", color: '#1a1a1a', background: '#fff', fontSize: 12 }}>
-      <div style={{ background: accent, color: '#fff', padding: '1.5rem 2rem' }}>
-        <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: 1, textTransform: 'uppercase' }}>{data.fullName || 'YOUR NAME'}</div>
-        <div style={{ fontSize: 13, opacity: 0.9, marginTop: 3, marginBottom: 10 }}>{data.jobTitle}</div>
-        <div style={{ display: 'flex', gap: '1.25rem', fontSize: 11, opacity: 0.85, flexWrap: 'wrap' }}>
+    <div style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", color: '#1a1a1a', background: '#fff', fontSize: 13, minHeight: '297mm' }}>
+      <div style={{ background: accent, color: '#fff', padding: '1.75rem 2.5rem' }}>
+        <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: 1, textTransform: 'uppercase' }}>{data.fullName || 'YOUR NAME'}</div>
+        <div style={{ fontSize: 13, opacity: 0.9, marginTop: 4, marginBottom: 12 }}>{data.jobTitle}</div>
+        <div style={{ display: 'flex', gap: '1.5rem', fontSize: 11, opacity: 0.85, flexWrap: 'wrap' }}>
           {data.email && <span>✉ {data.email}</span>}
           {data.phone && <span>✆ {data.phone}</span>}
           {data.location && <span>⌖ {data.location}</span>}
@@ -260,35 +290,35 @@ export function BoldTheme({ data, colors }: { data: ResumeData; colors: ThemeCol
         </div>
       </div>
 
-      <div style={{ padding: '1.5rem 2rem' }}>
+      <div style={{ padding: '1.75rem 2.5rem' }}>
         {data.experiences.length > 0 && (
-          <div style={{ marginBottom: '1.25rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.6rem' }}>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.75rem' }}>
               <div style={{ width: 4, height: 16, background: accent, borderRadius: 2 }} />
               <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2 }}>Experience</div>
             </div>
             {data.experiences.map((exp) => (
-              <div key={exp.id} style={{ marginBottom: '0.75rem', paddingLeft: 12, borderLeft: '2px solid #f0f0f0' }}>
+              <div key={exp.id} style={{ marginBottom: '1rem', paddingLeft: 14, borderLeft: '2px solid #f0f0f0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontWeight: 700, fontSize: 12 }}>{exp.title}</span>
+                  <span style={{ fontWeight: 700, fontSize: 13 }}>{exp.title}</span>
                   <span style={{ color: '#777', fontSize: 11 }}>{exp.startDate}{exp.endDate ? ` – ${exp.endDate}` : ''}</span>
                 </div>
-                {exp.company && <div style={{ color: accent, fontSize: 11, fontWeight: 600 }}>{exp.company}{exp.location ? ` · ${exp.location}` : ''}</div>}
-                {exp.description && <div style={{ color: '#555', marginTop: 3, whiteSpace: 'pre-line', lineHeight: 1.5 }}>{exp.description}</div>}
+                {exp.company && <div style={{ color: accent, fontSize: 11, fontWeight: 600, marginTop: 1 }}>{exp.company}{exp.location ? ` · ${exp.location}` : ''}</div>}
+                {exp.description && <div style={{ color: '#555', marginTop: 4, whiteSpace: 'pre-line', lineHeight: 1.7 }}>{exp.description}</div>}
               </div>
             ))}
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: '2rem' }}>
+        <div style={{ display: 'flex', gap: '2.5rem' }}>
           {data.education.length > 0 && (
             <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.6rem' }}>
                 <div style={{ width: 4, height: 16, background: accent, borderRadius: 2 }} />
                 <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2 }}>Education</div>
               </div>
               {data.education.map((edu) => (
-                <div key={edu.id} style={{ paddingLeft: 12, borderLeft: '2px solid #f0f0f0' }}>
+                <div key={edu.id} style={{ paddingLeft: 14, borderLeft: '2px solid #f0f0f0', marginBottom: 8 }}>
                   <div style={{ fontWeight: 700 }}>{edu.degree}</div>
                   <div style={{ color: '#555', fontSize: 11 }}>{edu.school}</div>
                   <div style={{ color: '#888', fontSize: 10 }}>{edu.year}</div>
@@ -298,13 +328,13 @@ export function BoldTheme({ data, colors }: { data: ResumeData; colors: ThemeCol
           )}
           {data.skills.length > 0 && (
             <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.6rem' }}>
                 <div style={{ width: 4, height: 16, background: accent, borderRadius: 2 }} />
                 <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2 }}>Skills</div>
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, paddingLeft: 12 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, paddingLeft: 14 }}>
                 {data.skills.map((s) => (
-                  <span key={s} style={{ background: lightBg, color: accent, border: `1px solid ${accent}`, borderRadius: 3, padding: '2px 7px', fontSize: 11, fontWeight: 600 }}>{s}</span>
+                  <span key={s} style={{ background: lightBg, color: accent, border: `1px solid ${accent}`, borderRadius: 3, padding: '3px 9px', fontSize: 11, fontWeight: 600 }}>{s}</span>
                 ))}
               </div>
             </div>
@@ -320,11 +350,11 @@ export function BoldTheme({ data, colors }: { data: ResumeData; colors: ThemeCol
 export function MinimalTheme({ data, colors }: { data: ResumeData; colors: ThemeColors }) {
   const accent = colors.accent
   return (
-    <div style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", color: '#111', background: '#fafafa', padding: '2rem 2.5rem', fontSize: 12 }}>
-      <div style={{ textAlign: 'center', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid #e0e0e0' }}>
-        <div style={{ fontSize: 24, fontWeight: 300, letterSpacing: 6, textTransform: 'uppercase' }}>{data.fullName || 'YOUR NAME'}</div>
-        {data.jobTitle && <div style={{ fontSize: 12, color: accent, marginTop: 4, letterSpacing: 2, textTransform: 'uppercase' }}>{data.jobTitle}</div>}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: 8, fontSize: 10, color: '#888' }}>
+    <div style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", color: '#111', background: '#fafafa', padding: '2.5rem 3rem', fontSize: 13, minHeight: '297mm' }}>
+      <div style={{ textAlign: 'center', marginBottom: '2rem', paddingBottom: '1.25rem', borderBottom: '1px solid #e0e0e0' }}>
+        <div style={{ fontSize: 26, fontWeight: 300, letterSpacing: 6, textTransform: 'uppercase' }}>{data.fullName || 'YOUR NAME'}</div>
+        {data.jobTitle && <div style={{ fontSize: 12, color: accent, marginTop: 5, letterSpacing: 2, textTransform: 'uppercase' }}>{data.jobTitle}</div>}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '1.25rem', marginTop: 10, fontSize: 10, color: '#888' }}>
           {[data.email, data.phone, data.location, data.linkedin].filter(Boolean).map((v, i) => (
             <span key={i}>{v}</span>
           ))}
@@ -332,39 +362,39 @@ export function MinimalTheme({ data, colors }: { data: ResumeData; colors: Theme
       </div>
 
       {data.experiences.length > 0 && (
-        <div style={{ marginBottom: '1.25rem' }}>
-          <div style={{ fontSize: 9, letterSpacing: 4, textTransform: 'uppercase', color: accent, marginBottom: '0.6rem', fontWeight: 600 }}>Experience</div>
+        <div style={{ marginBottom: '1.75rem' }}>
+          <div style={{ fontSize: 9, letterSpacing: 4, textTransform: 'uppercase', color: accent, marginBottom: '0.75rem', fontWeight: 600 }}>Experience</div>
           {data.experiences.map((exp) => (
-            <div key={exp.id} style={{ marginBottom: '0.75rem' }}>
+            <div key={exp.id} style={{ marginBottom: '1rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontWeight: 600 }}>{exp.title}{exp.company ? <span style={{ fontWeight: 400, color: '#555' }}>, {exp.company}</span> : null}</span>
                 <span style={{ color: '#888', fontSize: 11 }}>{exp.startDate}{exp.endDate ? ` – ${exp.endDate}` : ''}</span>
               </div>
               {exp.location && <div style={{ color: '#999', fontSize: 10, marginBottom: 2 }}>{exp.location}</div>}
-              {exp.description && <div style={{ color: '#555', lineHeight: 1.6, whiteSpace: 'pre-line' }}>{exp.description}</div>}
+              {exp.description && <div style={{ color: '#555', lineHeight: 1.7, whiteSpace: 'pre-line', marginTop: 3 }}>{exp.description}</div>}
             </div>
           ))}
-          <div style={{ borderBottom: '1px solid #e8e8e8', marginTop: 4 }} />
+          <div style={{ borderBottom: '1px solid #e8e8e8', marginTop: 6 }} />
         </div>
       )}
 
       {data.education.length > 0 && (
-        <div style={{ marginBottom: '1.25rem' }}>
-          <div style={{ fontSize: 9, letterSpacing: 4, textTransform: 'uppercase', color: accent, marginBottom: '0.6rem', fontWeight: 600 }}>Education</div>
+        <div style={{ marginBottom: '1.75rem' }}>
+          <div style={{ fontSize: 9, letterSpacing: 4, textTransform: 'uppercase', color: accent, marginBottom: '0.75rem', fontWeight: 600 }}>Education</div>
           {data.education.map((edu) => (
-            <div key={edu.id} style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div key={edu.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
               <span>{edu.degree}{edu.school ? <span style={{ color: '#555' }}>, {edu.school}</span> : null}</span>
               <span style={{ color: '#888', fontSize: 11 }}>{edu.year}</span>
             </div>
           ))}
-          <div style={{ borderBottom: '1px solid #e8e8e8', marginTop: 8 }} />
+          <div style={{ borderBottom: '1px solid #e8e8e8', marginTop: 10 }} />
         </div>
       )}
 
       {data.skills.length > 0 && (
         <div>
-          <div style={{ fontSize: 9, letterSpacing: 4, textTransform: 'uppercase', color: accent, marginBottom: '0.5rem', fontWeight: 600 }}>Skills</div>
-          <div style={{ color: '#333', fontSize: 11, lineHeight: 2 }}>{data.skills.join(' · ')}</div>
+          <div style={{ fontSize: 9, letterSpacing: 4, textTransform: 'uppercase', color: accent, marginBottom: '0.6rem', fontWeight: 600 }}>Skills</div>
+          <div style={{ color: '#333', fontSize: 11, lineHeight: 2.1 }}>{data.skills.join(' · ')}</div>
         </div>
       )}
     </div>
@@ -377,47 +407,47 @@ export function ExecutiveTheme({ data, colors }: { data: ResumeData; colors: The
   const headerBg = colors.secondary
   const accent = colors.accent
   return (
-    <div style={{ fontFamily: 'Georgia, serif', color: '#1a1a1a', background: '#fff', fontSize: 12 }}>
-      <div style={{ background: headerBg, color: '#fff', padding: '1.5rem 2rem' }}>
-        <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: 1 }}>{data.fullName || 'YOUR NAME'}</div>
-        {data.jobTitle && <div style={{ fontSize: 13, color: '#bdc3c7', marginTop: 4 }}>{data.jobTitle}</div>}
+    <div style={{ fontFamily: 'Georgia, serif', color: '#1a1a1a', background: '#fff', fontSize: 13, minHeight: '297mm' }}>
+      <div style={{ background: headerBg, color: '#fff', padding: '1.75rem 2.5rem' }}>
+        <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: 1 }}>{data.fullName || 'YOUR NAME'}</div>
+        {data.jobTitle && <div style={{ fontSize: 13, color: '#bdc3c7', marginTop: 5 }}>{data.jobTitle}</div>}
       </div>
 
-      <div style={{ background: accent, color: '#fff', padding: '5px 2rem', display: 'flex', gap: '1.5rem', fontSize: 10, flexWrap: 'wrap' }}>
+      <div style={{ background: accent, color: '#fff', padding: '6px 2.5rem', display: 'flex', gap: '1.75rem', fontSize: 10, flexWrap: 'wrap' }}>
         {data.email && <span>{data.email}</span>}
         {data.phone && <span>{data.phone}</span>}
         {data.location && <span>{data.location}</span>}
         {data.linkedin && <span>{data.linkedin}</span>}
       </div>
 
-      <div style={{ padding: '1.5rem 2rem' }}>
+      <div style={{ padding: '1.75rem 2.5rem' }}>
         {data.experiences.length > 0 && (
-          <div style={{ marginBottom: '1.25rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.75rem' }}>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.9rem' }}>
               <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, color: headerBg }}>Experience</div>
               <div style={{ flex: 1, height: 1, background: accent }} />
             </div>
             {data.experiences.map((exp) => (
-              <div key={exp.id} style={{ marginBottom: '0.8rem' }}>
+              <div key={exp.id} style={{ marginBottom: '1.1rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                   <span style={{ fontWeight: 700, fontSize: 13 }}>{exp.title}</span>
                   <span style={{ color: '#777', fontSize: 11 }}>{exp.startDate}{exp.endDate ? ` – ${exp.endDate}` : ''}</span>
                 </div>
-                {exp.company && <div style={{ color: accent, fontSize: 11, fontStyle: 'italic' }}>{exp.company}{exp.location ? `, ${exp.location}` : ''}</div>}
-                {exp.description && <div style={{ color: '#444', marginTop: 4, whiteSpace: 'pre-line', lineHeight: 1.6 }}>{exp.description}</div>}
+                {exp.company && <div style={{ color: accent, fontSize: 11, fontStyle: 'italic', marginTop: 1 }}>{exp.company}{exp.location ? `, ${exp.location}` : ''}</div>}
+                {exp.description && <div style={{ color: '#444', marginTop: 5, whiteSpace: 'pre-line', lineHeight: 1.7 }}>{exp.description}</div>}
               </div>
             ))}
           </div>
         )}
 
         {data.education.length > 0 && (
-          <div style={{ marginBottom: '1.25rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.75rem' }}>
+          <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.9rem' }}>
               <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, color: headerBg }}>Education</div>
               <div style={{ flex: 1, height: 1, background: accent }} />
             </div>
             {data.education.map((edu) => (
-              <div key={edu.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+              <div key={edu.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7 }}>
                 <div><span style={{ fontWeight: 700 }}>{edu.degree}</span>{edu.school ? <span style={{ color: '#555', fontStyle: 'italic' }}> — {edu.school}</span> : null}</div>
                 <span style={{ color: '#777', fontSize: 11 }}>{edu.year}</span>
               </div>
@@ -427,13 +457,13 @@ export function ExecutiveTheme({ data, colors }: { data: ResumeData; colors: The
 
         {data.skills.length > 0 && (
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.9rem' }}>
               <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, color: headerBg }}>Skills</div>
               <div style={{ flex: 1, height: 1, background: accent }} />
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
               {data.skills.map((s) => (
-                <span key={s} style={{ border: `1px solid ${accent}`, color: accent, borderRadius: 2, padding: '2px 8px', fontSize: 11 }}>{s}</span>
+                <span key={s} style={{ border: `1px solid ${accent}`, color: accent, borderRadius: 2, padding: '3px 10px', fontSize: 11 }}>{s}</span>
               ))}
             </div>
           </div>
