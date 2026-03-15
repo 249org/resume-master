@@ -1196,8 +1196,37 @@ function ResumeBuilderContent() {
 
             {/* Resume live preview */}
             <div className="flex-1 overflow-y-auto p-4">
-              <div ref={previewRef} className="mx-auto max-w-[520px] rounded shadow-md">
+              <div ref={previewRef} className="relative mx-auto max-w-[520px] rounded shadow-md">
                 <ThemeComponent data={resumeData} colors={currentColors} />
+                {/* Watermark: visible in preview and in PDF export (inline styles for print) */}
+                <div
+                  className="pointer-events-none absolute inset-0 flex items-center justify-center"
+                  aria-hidden
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    left: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <span
+                    className="whitespace-nowrap select-none"
+                    style={{
+                      fontSize: '15px',
+                      fontWeight: 600,
+                      letterSpacing: '0.15em',
+                      color: 'rgba(0,0,0,0.12)',
+                      transform: 'rotate(-28deg)',
+                      transformOrigin: 'center',
+                    }}
+                  >
+                    Resume Master
+                  </span>
+                </div>
               </div>
             </div>
           </div>
