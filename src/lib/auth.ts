@@ -2,32 +2,50 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDb } from "@/db/index";
 import * as schema from "@/db/schema/auth-schema";
-import { polar, checkout } from "@polar-sh/better-auth";
-import { Polar } from "@polar-sh/sdk";
+import { polar, checkout, portal, usage } from "@polar-sh/better-auth";
 import { nextCookies } from "better-auth/next-js";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { getCheckoutProductsForAuth } from "@/config/polar-products";
+import { getPolarSdk } from "@/lib/polar/sdk";
 
-const polarClient = new Polar({
-  accessToken: process.env.POLAR_ACCESS_TOKEN,
-  server: "production",
-});
+function appBaseUrl(): string {
+  return (
+    process.env.BETTER_AUTH_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.BASE_URL ||
+    "http://localhost:3000"
+  ).replace(/\/$/, "");
+}
 
 // Lazily initialised — getDb() calls getCloudflareContext() which requires
 // an active request context, so we cannot call it at module-load time.
 let _auth: ReturnType<typeof betterAuth> | undefined;
+/** When Polar env changes, rebuild auth so checkout uses the new token / product list. */
+let _authPolarConfigKey: string | undefined;
+
+function polarPluginConfigKey(): string {
+  return [
+    (process.env.POLAR_ACCESS_TOKEN ?? "").trim(),
+    process.env.POLAR_ENV ?? "",
+    process.env.POLAR_SUCCESS_URL ?? "",
+    JSON.stringify(getCheckoutProductsForAuth()),
+  ].join("\0");
+}
 
 export function getAuth() {
-  if (_auth) return _auth;
+  const key = polarPluginConfigKey();
+  if (_auth && _authPolarConfigKey === key) {
+    return _auth;
+  }
+
+  _authPolarConfigKey = key;
 
   _auth = betterAuth({
     database: drizzleAdapter(getDb(), {
       provider: "sqlite",
       schema,
     }),
-    emailAndPassword: {
-      enabled: true,
-    },
     socialProviders: {
       github: {
         clientId: process.env.GITHUB_CLIENT_ID as string,
@@ -41,7 +59,7 @@ export function getAuth() {
     plugins: [
       nextCookies(),
       polar({
-        client: polarClient,
+        client: getPolarSdk(),
         // Disabled: Polar does not allow updating external_id on existing customers.
         // When enabled, the plugin tries to sync external_id after sign-up and fails
         // if a Polar customer already exists for that email (e.g. after DB migration).
@@ -49,23 +67,14 @@ export function getAuth() {
         createCustomerOnSignUp: false,
         use: [
           checkout({
-            products: [
-              {
-                productId: "b0dcd715-4684-4225-bc34-47ca86aecf3b",
-                slug: "Pro",
-              },
-              {
-                productId: "7eafbde9-798a-4afb-b378-b1fa65b6d255",
-                slug: "Basic",
-              },
-              {
-                productId: "fd5fb6c3-2da0-4a94-96a9-0aa8613719b9",
-                slug: "Free",
-              },
-            ],
+            products: getCheckoutProductsForAuth(),
             successUrl: process.env.POLAR_SUCCESS_URL,
             authenticatedUsersOnly: true,
           }),
+          portal({
+            returnUrl: appBaseUrl(),
+          }),
+          usage(),
         ],
       }),
     ],

@@ -232,27 +232,13 @@ export default function SettingsPage() {
           <Card className="bg-accent p-5">
             <CardHeader className="px-0 pt-0">
               <CardTitle className="flex items-center gap-2 text-secondary text-xl">
-                <Shield className="h-4 w-4" /> Password & Security
+                <Shield className="h-4 w-4" /> Account security
               </CardTitle>
             </CardHeader>
             <CardContent className="px-0 space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <Label htmlFor="currentPass" className="text-foreground text-sm">Current Password</Label>
-                  <Input id="currentPass" type="password" placeholder="••••••••" />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <Label htmlFor="newPass" className="text-foreground text-sm">New Password</Label>
-                  <Input id="newPass" type="password" placeholder="••••••••" />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="confirmPass" className="text-foreground text-sm">Confirm Password</Label>
-                  <Input id="confirmPass" type="password" placeholder="••••••••" />
-                </div>
-              </div>
-              <Button size="sm">Update Password</Button>
+              <p className="text-foreground text-sm leading-relaxed">
+                You sign in with Google or GitHub. Password changes and email login are not available for this account — manage access from your provider’s security settings.
+              </p>
 
               <Separator />
 

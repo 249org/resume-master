@@ -1,161 +1,135 @@
 'use client'
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, ChevronDown, ArrowRight, Sparkles } from '@/components/icons'
+import { useState, useEffect } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Menu, X, Sparkles, ArrowRight } from '@/components/icons'
 import Link from 'next/link'
 import ThemeSwitch from '../theme-switch'
 
-interface NavItem {
-  name: string
-  href: string
-  hasDropdown?: boolean
-}
-
-const navItems: NavItem[] = [
-  { name: 'Features', href: '#features' },
-  { name: 'How it works', href: '#services' },
-  { name: 'Pricing', href: '/pricing' },
+const navItems = [
+  { name: 'Features', href: '/#features' },
+  { name: 'How it works', href: '/#services' },
+  { name: 'Pricing', href: '/#pricing' },
 ]
 
 export default function Navbar() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
 
-  const mobileMenuVariants = {
-    closed: { opacity: 0, height: 0 },
-    open: { opacity: 1, height: 'auto' },
-  }
-
-  const dropdownVariants = {
-    hidden: { opacity: 0, y: -10, scale: 0.95 },
-    visible: { opacity: 1, y: 0, scale: 1 },
-  }
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   return (
-    <motion.header
-      className="bg-background z-50 border-0 duration-300 lg:border-b"
-      transition={{ duration: 0.3, ease: 'easeInOut' }}
+    <header
+      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
+        scrolled
+          ? 'bg-background/75 shadow-sm ring-1 ring-black/[0.06] backdrop-blur-xl dark:ring-white/[0.06]'
+          : 'bg-background'
+      }`}
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between lg:h-20">
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg">
-              <Sparkles className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-secondary text-xl font-bold">Acme Inc.</span>
-          </Link>
-
-          <nav className="hidden items-center space-x-8 lg:flex">
-            {navItems.map((item) => (
-              <div
-                key={item.name}
-                className="relative"
-                onMouseEnter={() =>
-                  item.hasDropdown && setActiveDropdown(item.name)
-                }
-                onMouseLeave={() => setActiveDropdown(null)}
-              >
-                <Link
-                  href={item.href}
-                  className="text-foreground hover:text-foreground/90 flex items-center space-x-1 font-medium transition-colors duration-200"
-                >
-                  <span>{item.name}</span>
-                  {item.hasDropdown && (
-                    <ChevronDown className="h-4 w-4 transition-transform duration-200" />
-                  )}
-                </Link>
-
-                {item.hasDropdown && (
-                  <AnimatePresence>
-                    {activeDropdown === item.name && (
-                      <motion.div
-                        className="border-border bg-background/95 absolute top-full left-0 mt-2 w-64 overflow-hidden rounded-xl border shadow-xl backdrop-blur-lg"
-                        variants={dropdownVariants}
-                        initial="hidden"
-                        animate="visible"
-                        exit="hidden"
-                        transition={{ duration: 0.2 }}
-                      ></motion.div>
-                    )}
-                  </AnimatePresence>
-                )}
-              </div>
-            ))}
-          </nav>
-
-          <div className="hidden items-center space-x-4 lg:flex">
-            <Link
-              href="/sign-in"
-              className="text-foreground hover:text-foreground/90 font-medium transition-colors duration-200"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/sign-up"
-              className="bg-primary inline-flex items-center space-x-2 rounded-full px-6 py-2.5 font-medium text-white transition-all duration-200 hover:shadow-lg"
-            >
-              <span>Get Started</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <ThemeSwitch />
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2.5">
+          <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-lg">
+            <Sparkles className="size-4 text-white" />
           </div>
-          {/* Mobile menu */}
-          <motion.button
-            className="hover:bg-muted rounded-lg p-2 transition-colors duration-200 lg:hidden"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            whileTap={{ scale: 0.95 }}
+          <span className="text-foreground text-lg font-semibold tracking-tight">
+            Resume Master
+          </span>
+        </Link>
+
+        {/* Desktop nav — pill */}
+        <nav
+          aria-label="Main"
+          className="border-border bg-muted/60 hidden items-center gap-1 rounded-full border px-2 py-1.5 lg:flex"
+        >
+          {navItems.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className="text-muted-foreground hover:text-foreground hover:bg-background rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
+            >
+              {item.name}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Desktop actions */}
+        <div className="hidden items-center gap-3 lg:flex">
+          <Link
+            href="/sign-in"
+            className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
           >
-            {isMobileMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
-          </motion.button>
+            Sign in
+          </Link>
+          <Link
+            href="/sign-up"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors"
+          >
+            Get started
+            <ArrowRight className="size-3.5" />
+          </Link>
+          <ThemeSwitch />
         </div>
 
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <motion.div
-              className="overflow-hidden lg:hidden"
-              variants={mobileMenuVariants}
-              initial="closed"
-              animate="open"
-              exit="closed"
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-            >
-              <div className="border-border bg-background/95 mt-4 space-y-2 rounded-xl border py-4 shadow-xl backdrop-blur-lg">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="text-foreground hover:bg-muted block px-4 py-3 font-medium transition-colors duration-200"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-                <div className="space-y-2 px-4 py-2">
-                  <Link
-                    href="/sign-in"
-                    className="text-foreground hover:bg-muted block w-full rounded-lg py-2.5 text-center font-medium transition-colors duration-200"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    href="/sign-up"
-                    className="bg-primary block w-full rounded-lg py-2.5 text-center font-medium text-white transition-all duration-200 hover:shadow-lg"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Get Started
-                  </Link>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Mobile hamburger */}
+        <div className="flex items-center gap-2 lg:hidden">
+          <ThemeSwitch />
+          <button
+            className="hover:bg-muted text-foreground rounded-lg p-2 transition-colors"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          >
+            {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
+        </div>
       </div>
-    </motion.header>
+
+      {/* Mobile menu */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            key="mobile-menu"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className="border-border bg-background border-t lg:hidden"
+          >
+            <div className="mx-auto max-w-6xl space-y-1 px-4 py-4 sm:px-6">
+              {navItems.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="text-foreground hover:bg-muted block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              ))}
+              <div className="border-border mt-3 flex flex-col gap-2 border-t pt-4">
+                <Link
+                  href="/sign-in"
+                  className="text-foreground hover:bg-muted block rounded-lg px-3 py-2.5 text-center text-sm font-medium transition-colors"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/sign-up"
+                  className="bg-primary text-primary-foreground block rounded-full py-2.5 text-center text-sm font-medium"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Get started
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </header>
   )
 }

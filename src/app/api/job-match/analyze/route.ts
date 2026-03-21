@@ -7,6 +7,7 @@ import { checkRateLimit } from "@/lib/kv-rate-limit";
 import { getAiCache, setAiCache } from "@/lib/kv-cache";
 import { getDb } from "@/db/index";
 import { resumeAnalysis } from "@/db/schema/resume-analysis-schema";
+import { ingestJobMatchAnalysis } from "@/lib/polar/usage-ingest";
 
 const MAX_RESUME_LENGTH = 50_000;
 
@@ -125,6 +126,12 @@ export async function POST(request: Request) {
       aiReportJson: aiReport ? JSON.stringify(aiReport) : null,
       aiError: aiError ?? null,
       createdAt: now,
+    });
+
+    void ingestJobMatchAnalysis(request.headers.get("cookie"), {
+      mode,
+      jobTypeId,
+      analysisId,
     });
 
     return NextResponse.json({

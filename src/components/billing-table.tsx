@@ -11,75 +11,60 @@ import {
 import { Button } from '@/components/ui/button'
 import { Status, StatusIndicator, StatusLabel } from './billing-status'
 import { Download } from '@/components/icons'
+import type { BillingOrderRow } from '@/lib/polar/orders-map'
 
-type Invoice = {
-  invoice: string
-  paymentStatus: 'Paid' | 'Pending' | 'Unpaid'
-  totalAmount: string
-  date: string
+type Props = {
+  orders: BillingOrderRow[]
 }
 
-const invoices: Invoice[] = [
-  { invoice: 'INV001', paymentStatus: 'Paid',    totalAmount: '$250.00', date: 'Oct 24, 2025' },
-  { invoice: 'INV002', paymentStatus: 'Pending', totalAmount: '$150.00', date: 'Oct 24, 2025' },
-  { invoice: 'INV003', paymentStatus: 'Unpaid',  totalAmount: '$350.00', date: 'Oct 24, 2025' },
-  { invoice: 'INV004', paymentStatus: 'Paid',    totalAmount: '$450.00', date: 'Sep 24, 2025' },
-  { invoice: 'INV005', paymentStatus: 'Paid',    totalAmount: '$550.00', date: 'Sep 24, 2025' },
-  { invoice: 'INV006', paymentStatus: 'Pending', totalAmount: '$200.00', date: 'Aug 24, 2025' },
-  { invoice: 'INV007', paymentStatus: 'Unpaid',  totalAmount: '$300.00', date: 'Aug 24, 2025' },
-  { invoice: 'INV008', paymentStatus: 'Paid',    totalAmount: '$350.00', date: 'Jul 24, 2025' },
-  { invoice: 'INV009', paymentStatus: 'Paid',    totalAmount: '$350.00', date: 'Jun 24, 2025' },
-  { invoice: 'INV010', paymentStatus: 'Paid',    totalAmount: '$350.00', date: 'May 24, 2025' },
-  { invoice: 'INV011', paymentStatus: 'Unpaid',  totalAmount: '$350.00', date: 'Apr 24, 2025' },
-  { invoice: 'INV012', paymentStatus: 'Paid',    totalAmount: '$350.00', date: 'Mar 24, 2025' },
-  { invoice: 'INV013', paymentStatus: 'Pending', totalAmount: '$350.00', date: 'Feb 24, 2025' },
-  { invoice: 'INV014', paymentStatus: 'Paid',    totalAmount: '$350.00', date: 'Jan 24, 2025' },
-]
-
-export function BillingTable() {
-  const handleDownload = (invoiceId: string) => {
-    // In a real app this would trigger a PDF download from the server
-    const link = document.createElement('a')
-    link.href = '#'
-    link.download = `${invoiceId}.pdf`
-    link.click()
+export function BillingTable({ orders }: Props) {
+  if (orders.length === 0) {
+    return (
+      <p className="text-muted-foreground px-6 py-10 text-center text-sm">
+        No orders yet. When you subscribe or make a purchase, invoices will
+        appear here. You can also open the Polar customer portal to view
+        receipts.
+      </p>
+    )
   }
 
   return (
     <Table>
       <TableHeader className="sticky top-0 z-10">
         <TableRow className="[&>*]:text-secondary [&>*]:text-lg [&>*]:font-bold">
-          <TableHead>Invoice</TableHead>
+          <TableHead>Order</TableHead>
           <TableHead>Date</TableHead>
           <TableHead>Amount</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead>Download</TableHead>
+          <TableHead>Receipt</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {invoices.map((invoice) => (
-          <TableRow key={invoice.invoice}>
-            <TableCell className="text-secondary font-medium">
-              {invoice.invoice}
+        {orders.map((row) => (
+          <TableRow key={row.id}>
+            <TableCell className="text-secondary max-w-[200px] truncate font-medium">
+              {row.id}
             </TableCell>
-            <TableCell className="text-foreground">{invoice.date}</TableCell>
-            <TableCell className="text-foreground">{invoice.totalAmount}</TableCell>
+            <TableCell className="text-foreground">{row.date}</TableCell>
+            <TableCell className="text-foreground">{row.amount}</TableCell>
             <TableCell>
-              <Status status={invoice.paymentStatus}>
+              <Status status={row.status}>
                 <StatusIndicator />
                 <StatusLabel />
               </Status>
             </TableCell>
             <TableCell>
-              {invoice.paymentStatus === 'Paid' ? (
+              {row.receiptUrl ? (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-primary hover:text-primary gap-1.5 h-7 px-2 text-xs"
-                  onClick={() => handleDownload(invoice.invoice)}
+                  className="text-primary hover:text-primary h-7 gap-1.5 px-2 text-xs"
+                  asChild
                 >
-                  <Download className="h-3.5 w-3.5" />
-                  PDF
+                  <a href={row.receiptUrl} target="_blank" rel="noopener noreferrer">
+                    <Download className="h-3.5 w-3.5" />
+                    Download
+                  </a>
                 </Button>
               ) : (
                 <span className="text-foreground text-xs">—</span>

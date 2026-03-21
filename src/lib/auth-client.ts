@@ -1,2 +1,9 @@
 import { createAuthClient } from "better-auth/react"
-export const { signIn, signUp, useSession, signOut } = createAuthClient()
+import { polarClient } from "@polar-sh/better-auth/client"
+
+export const authClient = createAuthClient({
+  baseURL: process.env.NEXT_PUBLIC_APP_URL,
+  plugins: [polarClient()],
+})
+
+export const { signIn, useSession, signOut } = authClient

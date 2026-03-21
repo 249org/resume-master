@@ -1,4 +1,4 @@
-import { LoginForm } from '@/components/login-form'
+import { SocialAuthForm } from '@/components/social-auth-form'
 
 export default function SignIn() {
   return (
@@ -27,8 +27,8 @@ export default function SignIn() {
         </svg>
       </div>
       <div className="z-10 flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
-        <div className="w-full max-w-sm md:max-w-4xl">
-          <LoginForm />
+        <div className="w-full max-w-md md:max-w-3xl">
+          <SocialAuthForm variant="sign-in" />
         </div>
       </div>
     </>

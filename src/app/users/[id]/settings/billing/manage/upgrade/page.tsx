@@ -124,15 +124,17 @@ export default function UpgradePlanPage() {
             </div>
           </div>
           <Button asChild size="lg" className="shrink-0 gap-2">
-            <Link href="/pricing">View plans & pricing</Link>
+            <Link href={`/users/${userId}/settings/billing/checkout`}>
+              Go to checkout
+            </Link>
           </Button>
         </CardContent>
       </Card>
 
       <div className="flex justify-center pt-2">
         <Button variant="ghost" asChild>
-          <Link href={`/users/${userId}/settings/billing/manage`}>
-            Back to Manage subscription
+          <Link href={`/users/${userId}/settings/billing`}>
+            Back to billing
           </Link>
         </Button>
       </div>

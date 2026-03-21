@@ -1,142 +1,184 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import { Check } from '@/components/icons'
 
-type ButtonVariant =
-  | 'outline'
-  | 'default'
-  | 'link'
-  | 'destructive'
-  | 'secondary'
-  | 'ghost'
-
-const plans: {
-  name: string
-  price: string
-  description: string
-  features: string[]
-  buttonVariant: ButtonVariant | null | undefined
-  badge: string | null
-}[] = [
+const plans = [
   {
     name: 'Free',
-    price: '$0 / mo',
-    description: 'Per editor',
+    price: '$0',
+    period: null,
+    description: 'Try the essentials — no credit card needed.',
     features: [
-      'Basic Analytics Dashboard',
-      '5GB Cloud Storage',
-      'Email and Chat Support',
+      'Basic ATS-style resume scan',
+      '1 resume builder project',
+      'Standard templates',
+      'Limited exports per month',
     ],
-    buttonVariant: 'outline',
     badge: null,
+    href: '/sign-up',
+    cta: 'Start free',
+    highlighted: false,
   },
   {
-    name: 'Pro',
-    price: '$19 / mo',
-    description: 'Per editor',
+    name: 'Job Hunter',
+    price: '$19',
+    period: '/ month',
+    description: 'Full power for an active search.',
     features: [
-      'Everything in Free Plan',
-      '5GB Cloud Storage',
-      'Email and Chat Support',
-      'Access to Community Forum',
-      'Single User Access',
-      'Access to Basic Templates',
-      'Mobile App Access',
-      '1 Custom Report Per Month',
-      'Monthly Product Updates',
-      'Standard Security Features',
+      'Unlimited resume projects',
+      'Deeper ATS & keyword analysis',
+      'AI review & rewrite suggestions',
+      'Export to PDF',
+      'Job description match reports',
     ],
-    buttonVariant: 'default',
-    badge: 'Popular',
+    badge: 'Most popular',
+    href: '/sign-up',
+    cta: 'Get started',
+    highlighted: true,
   },
   {
-    name: 'Startup',
-    price: '$29 / mo',
-    description: 'Per editor',
+    name: 'Agency',
+    price: 'Custom',
+    period: null,
+    description: 'Teams and coaches managing many clients.',
     features: [
-      'Everything in Pro Plan',
-      '5GB Cloud Storage',
-      'Email and Chat Support',
+      'Volume & seat options',
+      'Shared workflows',
+      'Priority support',
+      'API access',
     ],
-    buttonVariant: 'outline',
     badge: null,
+    href: '/pricing',
+    cta: 'Talk to us',
+    highlighted: false,
   },
-]
+] as const
 
 export default function Pricing() {
   return (
-    <section className="not-prose relative w-full py-16 md:py-32">
-      <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div className="bg-primary/10 absolute -top-[10%] left-[50%] h-[40%] w-[60%] -translate-x-1/2 rounded-full blur-3xl" />
-        <div className="bg-primary/5 absolute -right-[10%] -bottom-[10%] h-[40%] w-[40%] rounded-full blur-3xl" />
-        <div className="bg-primary/5 absolute -bottom-[10%] -left-[10%] h-[40%] w-[40%] rounded-full blur-3xl" />
-      </div>
+    <section
+      id="pricing"
+      aria-labelledby="pricing-heading"
+      className="relative overflow-hidden bg-muted py-20 md:py-28"
+    >
+      {/* bottom fade into bg-card (FAQ) */}
+      <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-28 bg-gradient-to-t from-card to-transparent" />
 
-      <div className="mx-auto max-w-5xl px-6">
-        <div className="mx-auto max-w-2xl space-y-6 text-center">
-          <h1 className="text-center text-4xl font-semibold lg:text-5xl">
-            Pricing that Scales with You
-          </h1>
-          <p>
-            Gemini is evolving to be more than just the models. It supports an
-            entire suite of APIs and platforms helping developers and businesses
-            innovate.
+      <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-primary mb-3 text-xs font-semibold tracking-widest uppercase">
+            Pricing
+          </p>
+          <h2
+            id="pricing-heading"
+            className="text-foreground text-3xl font-bold tracking-tight sm:text-4xl"
+          >
+            Plans that match how hard you&apos;re searching
+          </h2>
+          <p className="text-muted-foreground mt-4 text-base leading-relaxed">
+            Start free, upgrade when you need unlimited projects and deeper
+            analysis.{' '}
+            <Link
+              href="/pricing"
+              className="text-primary font-medium underline-offset-4 hover:underline"
+            >
+              See full comparison
+            </Link>
+            .
           </p>
         </div>
 
-        <div className="mt-8 grid gap-6 md:mt-20 md:grid-cols-3">
-          {plans.map((plan, index) => (
-            <Card
-              key={index}
-              className={`relative flex flex-col ${
-                plan.badge ? 'border border-amber-300' : ''
-              }`}
-            >
-              {plan.badge && (
-                <span className="border-primary/20 bg-primary absolute inset-x-0 -top-3 mx-auto flex h-6 w-fit items-center rounded-full bg-linear-to-br/increasing from-purple-400 to-amber-300 px-3 py-1 text-xs font-medium text-amber-950 ring-1 ring-white/20 ring-offset-1 ring-offset-gray-950/5 ring-inset">
+        <div className="mt-14 grid items-start gap-4 sm:grid-cols-3 lg:gap-6">
+          {plans.map((plan) =>
+            plan.highlighted ? (
+              /* Featured card — dark */
+              <div
+                key={plan.name}
+                className="bg-secondary relative flex flex-col rounded-2xl p-6 lg:p-8"
+              >
+                <span className="bg-primary text-primary-foreground absolute -top-3 left-6 rounded-full px-3 py-1 text-xs font-semibold">
                   {plan.badge}
                 </span>
-              )}
 
-              <CardHeader>
-                <CardTitle className="font-medium">{plan.name}</CardTitle>
-                <span className="my-3 block text-2xl font-semibold">
-                  {plan.price}
-                </span>
-                <CardDescription className="text-sm">
+                <p className="text-secondary-foreground/70 text-sm font-medium">
+                  {plan.name}
+                </p>
+                <div className="mt-2 flex items-baseline gap-1.5">
+                  <span className="text-secondary-foreground text-4xl font-bold tracking-tight">
+                    {plan.price}
+                  </span>
+                  <span className="text-secondary-foreground/50 text-sm">
+                    {plan.period}
+                  </span>
+                </div>
+                <p className="text-secondary-foreground/60 mt-2 text-sm leading-relaxed">
                   {plan.description}
-                </CardDescription>
-              </CardHeader>
+                </p>
 
-              <CardContent className="space-y-4">
-                <hr className="border-dashed" />
-                <ul className="list-outside space-y-3 text-sm">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-center gap-2">
-                      <Check className="size-3" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
+                <div className="border-secondary-foreground/15 mt-6 border-t pt-6">
+                  <ul className="flex flex-col gap-3">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-start gap-3">
+                        <Check
+                          className="text-primary mt-0.5 size-4 shrink-0"
+                          aria-hidden
+                        />
+                        <span className="text-secondary-foreground/80 text-sm leading-snug">
+                          {f}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
-              <CardFooter className="mt-auto">
-                <Button asChild variant={plan.buttonVariant} className="w-full">
-                  <Link prefetch={false} href="">
-                    Get Started
-                  </Link>
+                <Button asChild className="mt-8 w-full rounded-full">
+                  <Link href={plan.href}>{plan.cta}</Link>
                 </Button>
-              </CardFooter>
-            </Card>
-          ))}
+              </div>
+            ) : (
+              /* Regular cards — light */
+              <div
+                key={plan.name}
+                className="bg-card border-border relative flex flex-col rounded-2xl border p-6 lg:p-8"
+              >
+                <p className="text-muted-foreground text-sm font-medium">
+                  {plan.name}
+                </p>
+                <div className="mt-2 flex items-baseline gap-1.5">
+                  <span className="text-foreground text-4xl font-bold tracking-tight">
+                    {plan.price}
+                  </span>
+                </div>
+                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                  {plan.description}
+                </p>
+
+                <div className="border-border mt-6 border-t pt-6">
+                  <ul className="flex flex-col gap-3">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-start gap-3">
+                        <Check
+                          className="text-primary mt-0.5 size-4 shrink-0"
+                          aria-hidden
+                        />
+                        <span className="text-foreground/80 text-sm leading-snug">
+                          {f}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <Button
+                  asChild
+                  variant="outline"
+                  className="mt-8 w-full rounded-full"
+                >
+                  <Link href={plan.href}>{plan.cta}</Link>
+                </Button>
+              </div>
+            )
+          )}
         </div>
       </div>
     </section>

@@ -6,5 +6,5 @@ export default async function ManageSubscriptionRedirect({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  redirect(`/users/${id}/settings/billing/manage/upgrade`)
+  redirect(`/users/${id}/settings/billing/checkout`)
 }
