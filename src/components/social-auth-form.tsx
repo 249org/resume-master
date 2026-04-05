@@ -7,10 +7,10 @@ import { FieldDescription, FieldGroup } from '@/components/ui/field'
 import { signIn } from '@/lib/auth-client'
 import { Github } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-
-const CALLBACK = '/users'
+import { getSafeRedirectPath } from '@/lib/safe-redirect'
 
 function GoogleGlyph(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -39,6 +39,20 @@ export function SocialAuthForm({
   ...props
 }: SocialAuthFormProps) {
   const [loading, setLoading] = useState<'google' | 'github' | null>(null)
+  const searchParams = useSearchParams()
+  const rawCallback = searchParams.get('callbackUrl')
+  const oauthCallbackURL = useMemo(
+    () => getSafeRedirectPath(rawCallback),
+    [rawCallback]
+  )
+
+  const altAuthHref = useMemo(() => {
+    const base = variant === 'sign-in' ? '/sign-up' : '/sign-in'
+    if (rawCallback != null && rawCallback !== '') {
+      return `${base}?callbackUrl=${encodeURIComponent(rawCallback)}`
+    }
+    return base
+  }, [variant, rawCallback])
 
   const copy =
     variant === 'sign-in'
@@ -48,7 +62,6 @@ export function SocialAuthForm({
             'Sign in to Resume Master with Google or GitHub — no password needed.',
           footerLead: "Don't have an account?",
           footerLink: 'Create one',
-          footerHref: '/sign-up' as const,
         }
       : {
           title: 'Create your account',
@@ -56,7 +69,6 @@ export function SocialAuthForm({
             'Continue with Google or GitHub. We never see your password.',
           footerLead: 'Already have an account?',
           footerLink: 'Sign in',
-          footerHref: '/sign-in' as const,
         }
 
   const startSocial = async (provider: 'google' | 'github') => {
@@ -64,11 +76,11 @@ export function SocialAuthForm({
     try {
       await signIn.social({
         provider,
-        callbackURL: CALLBACK,
+        callbackURL: oauthCallbackURL,
         fetchOptions: {
           onResponse: () => setLoading(null),
-          onError: (ctx) => {
-            toast.error(ctx.error.message)
+          onError: (ctx: { error: { message?: string } }) => {
+            toast.error(ctx.error.message ?? "Sign-in failed");
           },
         },
       })
@@ -135,7 +147,7 @@ export function SocialAuthForm({
             <FieldDescription className="text-center text-sm">
               {copy.footerLead}{' '}
               <Link
-                href={copy.footerHref}
+                href={altAuthHref}
                 className="text-primary font-medium underline-offset-4 hover:underline"
               >
                 {copy.footerLink}

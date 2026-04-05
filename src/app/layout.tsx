@@ -1,13 +1,25 @@
 import type { Metadata } from 'next'
-import { Roboto } from 'next/font/google'
+import { JetBrains_Mono, Merriweather, Outfit } from 'next/font/google'
 import './globals.css'
 import Providers from './providers'
 import { Toaster } from 'sonner'
 
-const roboto = Roboto({
-  variable: '--font-sans',
+const fontSans = Outfit({
   subsets: ['latin'],
-  weight: ['400', '500', '700'],
+  variable: '--font-outfit-sans',
+  weight: ['400', '500', '600', '700'],
+})
+
+const fontMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-jetbrains-mono',
+  weight: ['400', '500', '600', '700'],
+})
+
+const fontSerif = Merriweather({
+  subsets: ['latin'],
+  variable: '--font-merriweather-serif',
+  weight: ['400', '700'],
 })
 
 export const metadata: Metadata = {
@@ -55,7 +67,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${roboto.variable} antialiased`}>
+      <body
+        className={`${fontSans.variable} ${fontMono.variable} ${fontSerif.variable} antialiased`}
+      >
         <Providers>{children}</Providers>
         <Toaster />
       </body>

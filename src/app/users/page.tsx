@@ -12,5 +12,5 @@ export default async function page() {
   if (!session) {
     redirect('/sign-in')
   }
-  redirect(`/users/${session.user?.id}`)
+  redirect(`/users/${session.user?.id}/resumes`)
 }

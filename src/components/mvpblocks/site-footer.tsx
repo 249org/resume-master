@@ -87,7 +87,9 @@ export default function SiteFooter() {
         </div>
 
         <div className="border-border text-muted-foreground mt-12 flex flex-col items-center justify-between gap-3 border-t pt-8 text-xs sm:flex-row">
-          <p>© {new Date().getFullYear()} Resume Master. All rights reserved.</p>
+          <p>
+            © {new Date().getFullYear()} Resume Master. All rights reserved.
+          </p>
           <p>Built for job seekers who want signal, not spam.</p>
         </div>
       </div>
