@@ -1,4 +1,5 @@
 import { SocialAuthForm } from '@/components/social-auth-form'
+import { Suspense } from 'react'
 
 export default function SignUp() {
   return (
@@ -28,7 +29,15 @@ export default function SignUp() {
       </div>
       <div className="z-10 flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
         <div className="w-full max-w-md md:max-w-3xl">
-          <SocialAuthForm variant="sign-up" />
+          <Suspense
+            fallback={
+              <div className="text-muted-foreground text-center text-sm">
+                Loading…
+              </div>
+            }
+          >
+            <SocialAuthForm variant="sign-up" />
+          </Suspense>
         </div>
       </div>
     </>

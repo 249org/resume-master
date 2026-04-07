@@ -28,12 +28,20 @@ import {
   printResumeHTML,
   type SavedResume,
 } from '@/lib/resume-storage'
-import { THEMES, THEME_COMPONENTS, type ThemeColors } from '../resume-builder/resume-themes'
+import {
+  THEMES,
+  THEME_COMPONENTS,
+  type ThemeColors,
+} from '../resume-builder/resume-themes'
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -43,11 +51,11 @@ export default function ResumesPage() {
   const router = useRouter()
   const userId = params.id as string
 
-  const [resumes, setResumes]       = useState<SavedResume[]>([])
-  const [query, setQuery]           = useState('')
+  const [resumes, setResumes] = useState<SavedResume[]>([])
+  const [query, setQuery] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<SavedResume | null>(null)
   const [renameTarget, setRenameTarget] = useState<SavedResume | null>(null)
-  const [renameValue, setRenameValue]   = useState('')
+  const [renameValue, setRenameValue] = useState('')
 
   // Hidden render container for PDF export
   const [downloadTarget, setDownloadTarget] = useState<SavedResume | null>(null)
@@ -63,8 +71,8 @@ export default function ResumesPage() {
     // Brief timeout so React can flush the render into the hidden div
     const t = setTimeout(() => {
       if (!hiddenRef.current) return
-      const html     = hiddenRef.current.innerHTML
-      const title    = `${downloadTarget.fullName || 'Resume'} — ${THEMES.find(t => t.id === downloadTarget.selectedTheme)?.name ?? ''}`
+      const html = hiddenRef.current.innerHTML
+      const title = `${downloadTarget.fullName || 'Resume'} — ${THEMES.find((t) => t.id === downloadTarget.selectedTheme)?.name ?? ''}`
       printResumeHTML(html, title)
       setDownloadTarget(null)
     }, 150)
@@ -73,7 +81,7 @@ export default function ResumesPage() {
 
   // ── Filtered list ──────────────────────────────────────────────────────
   const filtered = resumes.filter((r) =>
-    [r.title, r.fullName, r.jobTitle]
+    [r.title, r.fullName, r.jobTitle, r.bio]
       .join(' ')
       .toLowerCase()
       .includes(query.toLowerCase())
@@ -138,7 +146,9 @@ export default function ResumesPage() {
           <div className="bg-background mb-4 flex h-14 w-14 items-center justify-center rounded-full border shadow-sm">
             <FileText className="text-secondary h-6 w-6" />
           </div>
-          <p className="text-secondary text-base font-semibold">No resumes yet</p>
+          <p className="text-secondary text-base font-semibold">
+            No resumes yet
+          </p>
           <p className="text-foreground mt-1 text-sm">
             Create your first resume to get started.
           </p>
@@ -156,7 +166,10 @@ export default function ResumesPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((resume) => {
             const theme = THEMES.find((t) => t.id === resume.selectedTheme)
-            const accent = resume.themeColors?.[resume.selectedTheme]?.accent ?? theme?.accentColor ?? '#000'
+            const accent =
+              resume.themeColors?.[resume.selectedTheme]?.accent ??
+              theme?.accentColor ??
+              '#000'
             return (
               <div
                 key={resume.id}
@@ -165,25 +178,43 @@ export default function ResumesPage() {
                 {/* Thumbnail */}
                 <div className="relative h-36 w-full overflow-hidden bg-white">
                   {theme?.thumbnail && (
-                    <div className="pointer-events-none h-full w-full scale-[1.8] origin-top-left p-2">
+                    <div className="pointer-events-none h-full w-full origin-top-left scale-[1.8] p-2">
                       {theme.thumbnail}
                     </div>
                   )}
                   {/* Accent color bar at top */}
-                  <div className="absolute top-0 left-0 right-0 h-1" style={{ background: accent }} />
+                  <div
+                    className="absolute top-0 right-0 left-0 h-1"
+                    style={{ background: accent }}
+                  />
                 </div>
 
                 {/* Card body */}
                 <div className="flex flex-1 flex-col gap-1 px-3 py-2.5">
                   <div className="min-w-0">
-                    <p className="text-secondary truncate font-semibold leading-tight">{resume.title}</p>
-                    <p className="text-foreground truncate text-xs">{resume.fullName}{resume.jobTitle ? ` · ${resume.jobTitle}` : ''}</p>
+                    <p className="text-secondary truncate leading-tight font-semibold">
+                      {resume.title}
+                    </p>
+                    <p className="text-foreground truncate text-xs">
+                      {resume.fullName}
+                      {resume.jobTitle ? ` · ${resume.jobTitle}` : ''}
+                    </p>
                   </div>
 
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: accent }} />
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">{theme?.name ?? resume.selectedTheme}</Badge>
-                    <span className="text-foreground ml-auto text-[10px]">{formatDate(resume.savedAt)}</span>
+                  <div className="mt-0.5 flex items-center gap-2">
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{ background: accent }}
+                    />
+                    <Badge
+                      variant="outline"
+                      className="px-1.5 py-0 text-[10px]"
+                    >
+                      {theme?.name ?? resume.selectedTheme}
+                    </Badge>
+                    <span className="text-foreground ml-auto text-[10px]">
+                      {formatDate(resume.savedAt)}
+                    </span>
                   </div>
                 </div>
 
@@ -195,14 +226,14 @@ export default function ResumesPage() {
                   >
                     <Wrench className="h-3 w-3" /> Edit
                   </button>
-                  <div className="w-px bg-border" />
+                  <div className="bg-border w-px" />
                   <button
                     onClick={() => setDownloadTarget(resume)}
                     className="text-secondary hover:bg-background flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors"
                   >
                     <Download className="h-3 w-3" /> Download
                   </button>
-                  <div className="w-px bg-border" />
+                  <div className="bg-border w-px" />
                   <button
                     onClick={() => setDeleteTarget(resume)}
                     className="text-destructive hover:bg-background flex flex-1 items-center justify-center gap-1.5 py-2 text-xs font-medium transition-colors"
@@ -224,36 +255,52 @@ export default function ResumesPage() {
       )}
 
       {/* ── Hidden render target for PDF export ── */}
-      {downloadTarget && (() => {
-        const ThemeComp = THEME_COMPONENTS[downloadTarget.selectedTheme]
-        const colors: ThemeColors =
-          downloadTarget.themeColors?.[downloadTarget.selectedTheme] ??
-          THEMES.find((t) => t.id === downloadTarget.selectedTheme)?.defaultColors ??
-          { accent: '#000000', secondary: '#000000' }
-        return (
-          <div
-            ref={hiddenRef}
-            aria-hidden
-            style={{ position: 'fixed', left: '-9999px', top: 0, width: 794, background: 'white', pointerEvents: 'none' }}
-          >
-            <ThemeComp data={downloadTarget} colors={colors} />
-          </div>
-        )
-      })()}
+      {downloadTarget &&
+        (() => {
+          const ThemeComp = THEME_COMPONENTS[downloadTarget.selectedTheme]
+          const colors: ThemeColors = downloadTarget.themeColors?.[
+            downloadTarget.selectedTheme
+          ] ??
+            THEMES.find((t) => t.id === downloadTarget.selectedTheme)
+              ?.defaultColors ?? { accent: '#000000', secondary: '#000000' }
+          return (
+            <div
+              ref={hiddenRef}
+              aria-hidden
+              style={{
+                position: 'fixed',
+                left: '-9999px',
+                top: 0,
+                width: 794,
+                background: 'white',
+                pointerEvents: 'none',
+              }}
+            >
+              <ThemeComp data={downloadTarget} colors={colors} />
+            </div>
+          )
+        })()}
 
       {/* ── Delete Confirmation Dialog ── */}
-      <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+      <Dialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+      >
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-secondary">Delete Resume</DialogTitle>
           </DialogHeader>
           <p className="text-foreground text-sm">
             Are you sure you want to delete{' '}
-            <span className="text-secondary font-semibold">{deleteTarget?.title}</span>?
-            This cannot be undone.
+            <span className="text-secondary font-semibold">
+              {deleteTarget?.title}
+            </span>
+            ? This cannot be undone.
           </p>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+              Cancel
+            </Button>
             <Button variant="destructive" onClick={handleDelete}>
               <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
             </Button>
@@ -262,7 +309,10 @@ export default function ResumesPage() {
       </Dialog>
 
       {/* ── Rename Dialog ── */}
-      <Dialog open={!!renameTarget} onOpenChange={(o) => !o && setRenameTarget(null)}>
+      <Dialog
+        open={!!renameTarget}
+        onOpenChange={(o) => !o && setRenameTarget(null)}
+      >
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-secondary">Rename Resume</DialogTitle>
@@ -275,8 +325,12 @@ export default function ResumesPage() {
             autoFocus
           />
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setRenameTarget(null)}>Cancel</Button>
-            <Button onClick={handleRename} disabled={!renameValue.trim()}>Save</Button>
+            <Button variant="outline" onClick={() => setRenameTarget(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRename} disabled={!renameValue.trim()}>
+              Save
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

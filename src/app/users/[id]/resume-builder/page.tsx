@@ -22,9 +22,6 @@ import {
   Trash2,
   ChevronUp,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Sparkles,
   Download,
   Save,
   Wand2,
@@ -32,8 +29,6 @@ import {
   Check,
   RefreshCw,
   Upload,
-  FileText,
-  X,
 } from '@/components/icons'
 import {
   THEMES,
@@ -51,38 +46,9 @@ import {
   type SavedResume,
 } from '@/lib/resume-storage'
 import { extractTextFromFile, checkFile } from '@/lib/resume-extract'
+import { ManualImportStep } from './manual-import-step'
 
-// ── Types ──────────────────────────────────────────────────────────────────
-
-type BuilderView = 'entry' | 'ai-setup' | 'manual-upload' | 'building'
-
-interface ParsedData {
-  fullName?: string
-  jobTitle?: string
-  email?: string
-  phone?: string
-  location?: string
-  linkedin?: string
-  experiences?: Array<{
-    title?: string
-    company?: string
-    location?: string
-    startDate?: string
-    endDate?: string
-    description?: string
-  }>
-  education?: Array<{
-    degree?: string
-    school?: string
-    year?: string
-  }>
-  skills?: string[]
-}
-
-interface ParseApiResponse {
-  error?: string
-  data?: ParsedData
-}
+type BuilderView = 'manual-upload' | 'building'
 
 // ── Color presets ──────────────────────────────────────────────────────────
 
@@ -103,23 +69,12 @@ function ResumeBuilderContent() {
   const editId = searchParams.get('id')
 
   // ── View state ────────────────────────────────────────────────────────
-  const [view, setView] = useState<BuilderView>(editId ? 'building' : 'entry')
+  const [view, setView] = useState<BuilderView>(editId ? 'building' : 'manual-upload')
 
-  // ── Wizard state ──────────────────────────────────────────────────────
-  const [aiStep, setAiStep] = useState<1 | 2>(1)
-  const [aiJobTarget, setAiJobTarget] = useState('')
-  const [aiJobDesc, setAiJobDesc] = useState('')
-  const [aiDescExpanded, setAiDescExpanded] = useState(false)
-  // Step 2 — personal details
-  const [aiFullName, setAiFullName] = useState('')
-  const [aiEmail, setAiEmail] = useState('')
-  const [aiPhone, setAiPhone] = useState('')
-  const [aiLocation, setAiLocation] = useState('')
-  const [aiLinkedin, setAiLinkedin] = useState('')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [uploadedText, setUploadedText] = useState('')
   const [isDragging, setIsDragging] = useState(false)
-  const [parseLoading, setParseLoading] = useState(false)
+  const [importBusy, setImportBusy] = useState(false)
   const [parseError, setParseError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -129,6 +84,7 @@ function ResumeBuilderContent() {
   const [education, setEducation] = useState<Education[]>([])
   const [fullName, setFullName] = useState('')
   const [jobTitle, setJobTitle] = useState('')
+  const [bio, setBio] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [location, setLocation] = useState('')
@@ -158,6 +114,7 @@ function ResumeBuilderContent() {
     setResumeTitle(saved.title)
     setFullName(saved.fullName)
     setJobTitle(saved.jobTitle)
+    setBio(saved.bio ?? '')
     setEmail(saved.email)
     setPhone(saved.phone)
     setLocation(saved.location)
@@ -193,94 +150,19 @@ function ResumeBuilderContent() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  // ── Apply parsed data to form ─────────────────────────────────────────
-  const applyParsedData = (data: ParsedData) => {
-    if (data.fullName) setFullName(data.fullName)
-    if (data.jobTitle) setJobTitle(data.jobTitle)
-    if (data.email) setEmail(data.email)
-    if (data.phone) setPhone(data.phone)
-    if (data.location) setLocation(data.location)
-    if (data.linkedin) setLinkedin(data.linkedin)
-    if (data.experiences?.length) {
-      setExperiences(
-        data.experiences.map((e, i) => ({
-          id: Date.now() + i,
-          title: e.title ?? '',
-          company: e.company ?? '',
-          location: e.location ?? '',
-          startDate: e.startDate ?? '',
-          endDate: e.endDate ?? '',
-          description: e.description ?? '',
-        }))
-      )
-    }
-    if (data.education?.length) {
-      setEducation(
-        data.education.map((e, i) => ({
-          id: Date.now() + i + 1000,
-          degree: e.degree ?? '',
-          school: e.school ?? '',
-          year: e.year ?? '',
-        }))
-      )
-    }
-    if (data.skills?.length) setSkillsList(data.skills)
-  }
-
-  // ── AI generate ───────────────────────────────────────────────────────
-  const handleGenerateWithAI = async () => {
-    if (!aiJobTarget.trim()) return
-    setParseLoading(true)
-    setParseError(null)
-    const jobDescAddition = aiJobDesc.trim()
-      ? `\n\nJob description:\n${aiJobDesc.trim()}`
-      : ''
-    try {
-      const res = await fetch('/api/resume-builder/parse', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          resumeText: uploadedText + jobDescAddition,
-          jobTarget: aiJobTarget.trim(),
-          mode: 'ai',
-        }),
-      })
-      const json = (await res.json()) as ParseApiResponse
-      if (!res.ok || json.error) throw new Error(json.error || 'Failed to generate resume')
-      if (json.data) applyParsedData(json.data)
-      // User-provided personal details always win over AI-parsed values
-      if (aiFullName.trim()) setFullName(aiFullName.trim())
-      if (aiEmail.trim()) setEmail(aiEmail.trim())
-      if (aiPhone.trim()) setPhone(aiPhone.trim())
-      if (aiLocation.trim()) setLocation(aiLocation.trim())
-      if (aiLinkedin.trim()) setLinkedin(aiLinkedin.trim())
-      setView('building')
-    } catch (e) {
-      setParseError(e instanceof Error ? e.message : 'An error occurred. Please try again.')
-    } finally {
-      setParseLoading(false)
-    }
-  }
-
-  // ── Manual continue ───────────────────────────────────────────────────
-  const handleManualContinue = async () => {
-    if (!uploadedText) return
-    setParseLoading(true)
+  // ── Manual continue: use extracted text as a starting reference (no AI) ──
+  const handleManualContinue = () => {
+    if (!uploadedText.trim()) return
+    setImportBusy(true)
     setParseError(null)
     try {
-      const res = await fetch('/api/resume-builder/parse', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resumeText: uploadedText, jobTarget: '', mode: 'parse' }),
-      })
-      const json = (await res.json()) as ParseApiResponse
-      if (!res.ok || json.error) throw new Error(json.error || 'Failed to parse resume')
-      if (json.data) applyParsedData(json.data)
+      const t = uploadedText.trim()
+      const max = 8000
+      setBio((prev) => (prev.trim() ? prev : t.slice(0, max)))
       setView('building')
-    } catch (e) {
-      setParseError(e instanceof Error ? e.message : 'Failed to parse resume. Try again or skip.')
+      clearUpload()
     } finally {
-      setParseLoading(false)
+      setImportBusy(false)
     }
   }
 
@@ -300,7 +182,7 @@ function ResumeBuilderContent() {
     }))
 
   const resumeData: ResumeData = {
-    fullName, jobTitle, email, phone, location, linkedin,
+    fullName, jobTitle, bio, email, phone, location, linkedin,
     experiences, education, skills: skillsList,
   }
   const ThemeComponent = THEME_COMPONENTS[selectedTheme]
@@ -336,7 +218,7 @@ function ResumeBuilderContent() {
     const payload: SavedResume = {
       id: resumeId,
       title: resumeTitle || `${fullName || 'Untitled'}'s Resume`,
-      fullName, jobTitle, email, phone, location, linkedin,
+      fullName, jobTitle, bio, email, phone, location, linkedin,
       experiences, education,
       skills: skillsList,
       selectedTheme,
@@ -360,502 +242,23 @@ function ResumeBuilderContent() {
     setTimeout(() => setIsPrinting(false), 2500)
   }
 
-  // ── Shared upload zone ────────────────────────────────────────────────
-  const renderUploadZone = () => (
-    <div>
-      {uploadedFile ? (
-        <div className="flex items-center gap-3 rounded-xl border bg-card px-4 py-3.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-            <FileText className="h-4 w-4 text-primary" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">{uploadedFile.name}</p>
-            <p className="text-xs text-muted-foreground">
-              {uploadedText ? 'Text extracted — ready to use' : 'Processing…'}
-            </p>
-          </div>
-          <button
-            onClick={clearUpload}
-            className="text-muted-foreground transition-colors hover:text-foreground"
-            aria-label="Remove file"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      ) : (
-        <div
-          onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault()
-            setIsDragging(false)
-            handleFile(e.dataTransfer.files[0])
-          }}
-          onClick={() => fileInputRef.current?.click()}
-          className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed px-8 py-10 transition-all ${
-            isDragging
-              ? 'border-primary bg-primary/5'
-              : 'border-border hover:border-primary/40 hover:bg-accent/50'
-          }`}
-        >
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl border bg-card">
-            <Upload className="h-5 w-5 text-muted-foreground" />
-          </div>
-          <div className="text-center">
-            <p className="text-sm font-medium text-foreground">Drop your resume here</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">or click to browse — PDF or DOCX, up to 5MB</p>
-          </div>
-        </div>
-      )}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".pdf,.docx"
-        className="hidden"
-        onChange={(e) => handleFile(e.target.files?.[0])}
-      />
-    </div>
-  )
-
-  // ── Error box ─────────────────────────────────────────────────────────
-  const renderError = () =>
-    parseError ? (
-      <div className="rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-        {parseError}
-      </div>
-    ) : null
-
-  // ══════════════════════════════════════════════════════════════════════
-  // ENTRY VIEW
-  // ══════════════════════════════════════════════════════════════════════
-  if (view === 'entry') {
-    return (
-      <div className="space-y-6">
-
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Create Your Resume
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Choose how you&apos;d like to get started
-          </p>
-        </div>
-
-        {/* Option cards */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-
-            {/* AI Card */}
-            <Card
-              className="relative flex cursor-pointer flex-col overflow-hidden border-2 border-primary ring-2 ring-primary ring-offset-2 ring-offset-background transition-all hover:shadow-lg"
-              onClick={() => { setAiStep(1); setView('ai-setup') }}
-            >
-              <CardContent className="flex flex-1 flex-col p-7">
-                <Badge className="absolute top-4 right-4 bg-primary text-[10px] tracking-widest text-primary-foreground">
-                  RECOMMENDED
-                </Badge>
-                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-primary shadow-sm">
-                  <Sparkles className="h-6 w-6 text-primary-foreground" />
-                </div>
-                <h2 className="text-xl font-semibold text-foreground">Create with AI</h2>
-                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                  Upload your resume and let AI tailor the content for your target role with ATS optimization.
-                </p>
-                <ul className="mt-5 flex-1 space-y-2.5">
-                  {[
-                    'AI-powered content optimization',
-                    'Role-targeted bullet points',
-                    'ATS keyword matching',
-                    'Parse any existing resume',
-                  ].map((f) => (
-                    <li key={f} className="flex items-center gap-2.5 text-sm text-foreground">
-                      <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Button className="pointer-events-none mt-7 w-full gap-2">
-                  <Sparkles className="h-4 w-4" /> Start with AI
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Manual Card */}
-            <Card
-              className="flex cursor-pointer flex-col overflow-hidden transition-all hover:border-primary/40 hover:shadow-lg"
-              onClick={() => setView('manual-upload')}
-            >
-              <CardContent className="flex flex-1 flex-col p-7">
-                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border bg-card">
-                  <FileText className="h-6 w-6 text-foreground" />
-                </div>
-                <h2 className="text-xl font-semibold text-foreground">Build Manually</h2>
-                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                  Take full control and fill in your details step by step. Optionally upload a resume to pre-fill the form.
-                </p>
-                <ul className="mt-5 flex-1 space-y-2.5">
-                  {[
-                    'Full control over every field',
-                    'Live preview as you type',
-                    '6 professional templates',
-                    'Upload to pre-fill fields',
-                  ].map((f) => (
-                    <li key={f} className="flex items-center gap-2.5 text-sm text-foreground">
-                      <Check className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Button variant="outline" className="pointer-events-none mt-7 w-full gap-2">
-                  <FileText className="h-4 w-4" /> Build Manually
-                </Button>
-              </CardContent>
-            </Card>
-
-        </div>
-      </div>
-    )
-  }
-
-  // ══════════════════════════════════════════════════════════════════════
-  // AI SETUP VIEW
-  // ══════════════════════════════════════════════════════════════════════
-  if (view === 'ai-setup') {
-    const stepLabels = ['Resume & Role', 'Your Details']
-
-    return (
-      <div className="space-y-6">
-
-        {/* Back */}
-        <button
-          onClick={() => {
-            if (aiStep === 2) {
-              setAiStep(1)
-              setParseError(null)
-            } else {
-              setView('entry')
-              clearUpload()
-              setParseError(null)
-            }
-          }}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ChevronLeft className="h-4 w-4" /> Back
-        </button>
-
-        {parseLoading ? (
-          /* Loading state */
-          <div className="flex flex-col items-center justify-center gap-5 py-24">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary shadow-lg">
-              <Sparkles className="h-8 w-8 text-primary-foreground" />
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-semibold text-foreground">AI is building your resume…</p>
-              <p className="mt-1.5 text-sm text-muted-foreground">
-                Tailoring content for{' '}
-                <span className="font-medium text-foreground">{aiJobTarget}</span>
-              </p>
-            </div>
-            <RefreshCw className="mt-2 h-5 w-5 animate-spin text-primary" />
-          </div>
-        ) : (
-          <>
-            {/* Step indicator + heading */}
-            <div>
-              <div className="mb-3 flex items-center gap-1.5">
-                {stepLabels.map((label, i) => {
-                  const stepNum = i + 1
-                  const isActive = aiStep === stepNum
-                  const isDone = aiStep > stepNum
-                  return (
-                    <div key={label} className="flex items-center gap-1.5">
-                      {i > 0 && (
-                        <div className={`h-px w-6 transition-colors ${isDone || isActive ? 'bg-primary' : 'bg-border'}`} />
-                      )}
-                      <div className={`flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-                        isActive ? 'bg-primary text-primary-foreground' :
-                        isDone ? 'bg-primary/15 text-primary' :
-                        'bg-accent text-muted-foreground'
-                      }`}>
-                        {isDone ? <Check className="h-3 w-3" /> : <span>{stepNum}</span>}
-                        {label}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-                {aiStep === 1 ? 'Resume & Target Role' : 'Your Details'}
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {aiStep === 1
-                  ? "Upload your current resume (optional), then tell us the role you're targeting."
-                  : 'Tell us a bit about yourself so your resume looks great from the start.'}
-              </p>
-            </div>
-
-            {/* ── STEP 1: Resume + Role ── */}
-            {aiStep === 1 && (
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                {/* Upload zone */}
-                <div className="space-y-2">
-                  <Label className="block text-sm font-medium text-foreground">
-                    Current resume{' '}
-                    <span className="font-normal text-muted-foreground">(optional)</span>
-                  </Label>
-                  {renderUploadZone()}
-                  {!uploadedFile && (
-                    <p className="text-center text-xs text-muted-foreground">
-                      No existing resume? AI will generate one from scratch based on your role.
-                    </p>
-                  )}
-                </div>
-
-                {/* Role + job desc + CTA */}
-                <div className="space-y-5">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="aiJobTarget" className="text-sm font-medium text-foreground">
-                      Target role <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="aiJobTarget"
-                      value={aiJobTarget}
-                      onChange={(e) => setAiJobTarget(e.target.value)}
-                      placeholder="e.g. Senior Software Engineer"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && aiJobTarget.trim()) setAiStep(2)
-                      }}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      AI will tailor your resume&apos;s content to match this role.
-                    </p>
-                  </div>
-
-                  {!aiDescExpanded ? (
-                    <button
-                      onClick={() => setAiDescExpanded(true)}
-                      className="flex items-center gap-1.5 text-sm text-primary underline-offset-4 transition-colors hover:underline"
-                    >
-                      <Plus className="h-3.5 w-3.5" /> Add job description for better matching
-                    </button>
-                  ) : (
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="aiJobDesc" className="text-sm font-medium text-foreground">
-                          Job description{' '}
-                          <span className="font-normal text-muted-foreground">(optional)</span>
-                        </Label>
-                        <button
-                          onClick={() => { setAiDescExpanded(false); setAiJobDesc('') }}
-                          className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                          Clear
-                        </button>
-                      </div>
-                      <Textarea
-                        id="aiJobDesc"
-                        value={aiJobDesc}
-                        onChange={(e) => setAiJobDesc(e.target.value)}
-                        placeholder="Paste the job description here for better keyword matching…"
-                        className="min-h-[120px] resize-none text-sm"
-                      />
-                    </div>
-                  )}
-
-                  <Button
-                    className="w-full gap-2"
-                    size="lg"
-                    disabled={!aiJobTarget.trim()}
-                    onClick={() => setAiStep(2)}
-                  >
-                    Next — Add your details
-                    <ChevronRight className="ml-auto h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* ── STEP 2: Personal Details ── */}
-            {aiStep === 2 && (
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                {/* Form fields */}
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="aiFullName" className="text-sm font-medium text-foreground">
-                        Full name <span className="text-destructive">*</span>
-                      </Label>
-                      <Input
-                        id="aiFullName"
-                        value={aiFullName}
-                        onChange={(e) => setAiFullName(e.target.value)}
-                        placeholder="e.g. Alex Morgan"
-                        autoFocus
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="aiEmail" className="text-sm font-medium text-foreground">
-                        Email address
-                      </Label>
-                      <Input
-                        id="aiEmail"
-                        type="email"
-                        value={aiEmail}
-                        onChange={(e) => setAiEmail(e.target.value)}
-                        placeholder="alex@example.com"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="aiPhone" className="text-sm font-medium text-foreground">
-                        Phone number
-                      </Label>
-                      <Input
-                        id="aiPhone"
-                        type="tel"
-                        value={aiPhone}
-                        onChange={(e) => setAiPhone(e.target.value)}
-                        placeholder="+1 (555) 123-4567"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="aiLocation" className="text-sm font-medium text-foreground">
-                        Location
-                      </Label>
-                      <Input
-                        id="aiLocation"
-                        value={aiLocation}
-                        onChange={(e) => setAiLocation(e.target.value)}
-                        placeholder="San Francisco, CA"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label htmlFor="aiLinkedin" className="text-sm font-medium text-foreground">
-                      LinkedIn{' '}
-                      <span className="font-normal text-muted-foreground">(optional)</span>
-                    </Label>
-                    <Input
-                      id="aiLinkedin"
-                      value={aiLinkedin}
-                      onChange={(e) => setAiLinkedin(e.target.value)}
-                      placeholder="linkedin.com/in/alexmorgan"
-                    />
-                  </div>
-
-                  {parseError && renderError()}
-
-                  <Button
-                    className="w-full gap-2"
-                    size="lg"
-                    disabled={!aiFullName.trim()}
-                    onClick={handleGenerateWithAI}
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    Generate My Resume
-                    <ChevronRight className="ml-auto h-4 w-4" />
-                  </Button>
-                  <p className="text-xs text-muted-foreground">
-                    Only your name is required — all other fields are optional.
-                  </p>
-                </div>
-
-                {/* Summary sidebar */}
-                <div className="space-y-3">
-                  <div className="rounded-xl border bg-card px-4 py-4">
-                    <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Generating for
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                        <Sparkles className="h-4 w-4 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{aiJobTarget}</p>
-                        {uploadedFile && (
-                          <p className="mt-0.5 text-xs text-muted-foreground">
-                            Based on: {uploadedFile.name}
-                          </p>
-                        )}
-                        {!uploadedFile && (
-                          <p className="mt-0.5 text-xs text-muted-foreground">Starting from scratch</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    )
-  }
-
-  // ══════════════════════════════════════════════════════════════════════
-  // MANUAL UPLOAD VIEW
-  // ══════════════════════════════════════════════════════════════════════
   if (view === 'manual-upload') {
     return (
-      <div className="space-y-6">
-
-        {/* Back */}
-        <button
-          onClick={() => { setView('entry'); clearUpload(); setParseError(null) }}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ChevronLeft className="h-4 w-4" /> Back
-        </button>
-
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Build Manually
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Upload your current resume to pre-fill the form, or start fresh with a blank template.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {/* Upload zone */}
-          <div className="space-y-2">
-            <Label className="block text-sm font-medium text-foreground">
-              Upload resume{' '}
-              <span className="font-normal text-muted-foreground">(optional)</span>
-            </Label>
-            {renderUploadZone()}
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-col justify-center gap-3">
-            {renderError()}
-            <Button
-              className="w-full gap-2"
-              size="lg"
-              disabled={!uploadedFile || !uploadedText || parseLoading}
-              onClick={handleManualContinue}
-            >
-              {parseLoading ? (
-                <><RefreshCw className="h-4 w-4 animate-spin" /> Parsing resume…</>
-              ) : (
-                <>Continue with resume <ChevronRight className="ml-auto h-4 w-4" /></>
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full text-muted-foreground"
-              onClick={handleManualSkip}
-              disabled={parseLoading}
-            >
-              Skip — start with a blank template
-            </Button>
-          </div>
-        </div>
-      </div>
+      <ManualImportStep
+        uploadedFile={uploadedFile}
+        uploadedText={uploadedText}
+        isDragging={isDragging}
+        setIsDragging={setIsDragging}
+        parseError={parseError}
+        importBusy={importBusy}
+        fileInputRef={fileInputRef}
+        onFileInputChange={(f) => handleFile(f)}
+        onDropFile={(f) => handleFile(f)}
+        onZoneClick={() => fileInputRef.current?.click()}
+        onClearUpload={clearUpload}
+        onContinueWithResume={handleManualContinue}
+        onStartBlank={handleManualSkip}
+      />
     )
   }
 
@@ -864,22 +267,32 @@ function ResumeBuilderContent() {
   // ══════════════════════════════════════════════════════════════════════
   return (
     <>
-      <div className="flex h-[calc(100vh-5rem)] flex-col gap-0">
+      <div className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col gap-0 pb-6 pt-2">
 
         {/* Top bar */}
-        <div className="mb-4 flex items-center justify-between border-b pb-4">
+        <div className="mb-6 flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              CV Builder
+              Resume builder
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {resumeTitle || 'Untitled Resume'} ·{' '}
-              <span className="font-medium" style={{ color: currentColors.accent }}>
-                {currentThemeConfig?.name} Theme
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              {resumeTitle || 'Untitled resume'}
+              <span className="text-border mx-2">·</span>
+              <span className="font-medium text-foreground" style={{ color: currentColors.accent }}>
+                {currentThemeConfig?.name}
               </span>
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={() => setView('manual-upload')}
+            >
+              <Upload className="h-3.5 w-3.5" />
+              Import from file
+            </Button>
             {savedAt && !justSaved && (
               <span className="hidden text-[10px] text-foreground sm:block">
                 Saved {new Date(savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -905,11 +318,11 @@ function ResumeBuilderContent() {
           <div className="overflow-y-auto">
             <Tabs defaultValue="personal">
               <TabsList className="w-full">
-                <TabsTrigger value="personal" className="flex-1 text-xs">Personal</TabsTrigger>
-                <TabsTrigger value="experience" className="flex-1 text-xs">Experience</TabsTrigger>
-                <TabsTrigger value="education" className="flex-1 text-xs">Education</TabsTrigger>
-                <TabsTrigger value="skills" className="flex-1 text-xs">Skills</TabsTrigger>
-                <TabsTrigger value="theme" className="flex-1 gap-1 text-xs">
+                <TabsTrigger value="personal" className="flex-1 text-xs sm:text-sm">Personal</TabsTrigger>
+                <TabsTrigger value="experience" className="flex-1 text-xs sm:text-sm">Experience</TabsTrigger>
+                <TabsTrigger value="education" className="flex-1 text-xs sm:text-sm">Education</TabsTrigger>
+                <TabsTrigger value="skills" className="flex-1 text-xs sm:text-sm">Skills</TabsTrigger>
+                <TabsTrigger value="theme" className="flex-1 gap-1 text-xs sm:text-sm">
                   <Palette className="h-3 w-3" /> Theme
                 </TabsTrigger>
               </TabsList>
@@ -931,6 +344,17 @@ function ResumeBuilderContent() {
                       <Input id={id} value={value} onChange={(e) => set(e.target.value)} placeholder={ph} />
                     </div>
                   ))}
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="bio" className="text-xs text-foreground">Bio</Label>
+                  <Textarea
+                    id="bio"
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="Short professional summary — paste your “About” or profile blurb (optional)"
+                    className="min-h-[100px] text-sm"
+                  />
+                  <p className="text-[10px] text-muted-foreground">Shown under your header on every theme when filled in.</p>
                 </div>
               </TabsContent>
 
@@ -1198,35 +622,6 @@ function ResumeBuilderContent() {
             <div className="flex-1 overflow-y-auto p-4">
               <div ref={previewRef} className="relative mx-auto max-w-[520px] rounded shadow-md">
                 <ThemeComponent data={resumeData} colors={currentColors} />
-                {/* Watermark: visible in preview and in PDF export (inline styles for print) */}
-                <div
-                  className="pointer-events-none absolute inset-0 flex items-center justify-center"
-                  aria-hidden
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    right: 0,
-                    bottom: 0,
-                    left: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <span
-                    className="whitespace-nowrap select-none"
-                    style={{
-                      fontSize: '15px',
-                      fontWeight: 600,
-                      letterSpacing: '0.15em',
-                      color: 'rgba(0,0,0,0.12)',
-                      transform: 'rotate(-28deg)',
-                      transformOrigin: 'center',
-                    }}
-                  >
-                    Resume Master
-                  </span>
-                </div>
               </div>
             </div>
           </div>
@@ -1264,7 +659,10 @@ function ResumeBuilderContent() {
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>Cancel</Button>
-            <Button onClick={commitSave} disabled={!resumeTitle.trim()}>
+            <Button
+              onClick={commitSave}
+              disabled={!resumeTitle.trim()}
+            >
               <Save className="mr-1.5 h-3.5 w-3.5" /> Save Resume
             </Button>
           </DialogFooter>
@@ -1278,12 +676,16 @@ function ResumeBuilderContent() {
 
 export default function ResumeBuilderPage() {
   return (
-    <Suspense fallback={
-      <div className="flex h-[calc(100vh-5rem)] items-center justify-center">
-        <RefreshCw className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    }>
-      <ResumeBuilderContent />
-    </Suspense>
+    <div className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col">
+      <Suspense
+        fallback={
+          <div className="flex h-[calc(100vh-5rem)] items-center justify-center">
+            <RefreshCw className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        }
+      >
+        <ResumeBuilderContent />
+      </Suspense>
+    </div>
   )
 }
