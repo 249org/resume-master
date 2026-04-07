@@ -5,7 +5,6 @@ export interface SavedResume {
   title: string
   fullName: string
   jobTitle: string
-  bio: string
   email: string
   phone: string
   location: string
@@ -20,15 +19,10 @@ export interface SavedResume {
 
 const KEY = 'saved-resumes-v1'
 
-function normalizeSaved(r: SavedResume): SavedResume {
-  return { ...r, bio: r.bio ?? '' }
-}
-
 export function getAllResumes(): SavedResume[] {
   if (typeof window === 'undefined') return []
   try {
-    const raw = JSON.parse(localStorage.getItem(KEY) ?? '[]') as SavedResume[]
-    return Array.isArray(raw) ? raw.map(normalizeSaved) : []
+    return JSON.parse(localStorage.getItem(KEY) ?? '[]')
   } catch {
     return []
   }
@@ -61,7 +55,6 @@ export function savedResumeToText(resume: SavedResume): string {
 
   if (resume.fullName) parts.push(resume.fullName)
   if (resume.jobTitle) parts.push(resume.jobTitle)
-  if (resume.bio?.trim()) parts.push(resume.bio.trim())
   if (resume.email) parts.push(resume.email)
   if (resume.phone) parts.push(resume.phone)
   if (resume.location) parts.push(resume.location)

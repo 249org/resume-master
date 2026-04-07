@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { runAtsEngine } from "@/lib/ats-engine";
+import { generateAiReport } from "@/lib/job-match/ai-report";
 import { getJobType } from "@/lib/job-types";
 import { checkRateLimit } from "@/lib/kv-rate-limit";
+import { getAiCache, setAiCache } from "@/lib/kv-cache";
 import { getDb } from "@/db/index";
 import { resumeAnalysis } from "@/db/schema/resume-analysis-schema";
+import { ingestJobMatchAnalysis } from "@/lib/polar/usage-ingest";
 
 const MAX_RESUME_LENGTH = 50_000;
 
@@ -20,6 +23,7 @@ export async function POST(request: Request) {
     let body: {
       resumeText?: unknown;
       jobTypeId?: unknown;
+      mode?: unknown;
       fileName?: unknown;
     };
     try {
@@ -35,6 +39,7 @@ export async function POST(request: Request) {
       typeof body.resumeText === "string" ? body.resumeText.trim() : "";
     const jobTypeId =
       typeof body.jobTypeId === "string" ? body.jobTypeId.trim() : "";
+    const mode = body.mode === "ats" ? "ats" : "ai";
     const fileName =
       typeof body.fileName === "string" && body.fileName.trim()
         ? body.fileName.trim()
@@ -65,12 +70,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const allowed = await checkRateLimit(session.user.id, "ats");
+    // Per-user hourly rate limit (5 AI / 20 ATS per hour)
+    const allowed = await checkRateLimit(session.user.id, mode);
     if (!allowed) {
       return NextResponse.json(
         {
-          error:
-            "Rate limit exceeded. You can run up to 20 ATS analyses per hour.",
+          error: `Rate limit exceeded. You can run up to ${mode === "ai" ? 5 : 20} ${mode.toUpperCase()} analyses per hour.`,
         },
         { status: 429 }
       );
@@ -83,6 +88,30 @@ export async function POST(request: Request) {
 
     const atsReport = runAtsEngine(sanitizedText, jobTypeId);
 
+    // Only call OpenAI when mode is 'ai'
+    let aiReport = null;
+    let aiError = null;
+    if (mode === "ai") {
+      // Check KV cache before calling OpenAI
+      const cached = await getAiCache(sanitizedText, jobTypeId);
+      if (cached) {
+        aiReport = cached;
+      } else {
+        const aiResult = await generateAiReport(
+          sanitizedText,
+          jobTypeId,
+          atsReport
+        );
+        if (aiResult.ok) {
+          aiReport = aiResult.report;
+          // Store in cache for 24 hours
+          await setAiCache(sanitizedText, jobTypeId, aiResult.report);
+        } else {
+          aiError = aiResult.error;
+        }
+      }
+    }
+
     const analysisId = crypto.randomUUID();
     const now = new Date();
     const db = getDb();
@@ -92,17 +121,24 @@ export async function POST(request: Request) {
       fileName,
       jobTypeId,
       jobTypeLabel: jobType.label,
-      mode: "ats",
+      mode,
       atsReportJson: atsReport ? JSON.stringify(atsReport) : null,
-      aiReportJson: null,
-      aiError: null,
+      aiReportJson: aiReport ? JSON.stringify(aiReport) : null,
+      aiError: aiError ?? null,
       createdAt: now,
+    });
+
+    void ingestJobMatchAnalysis(request.headers.get("cookie"), {
+      mode,
+      jobTypeId,
+      analysisId,
     });
 
     return NextResponse.json({
       atsReport,
-      aiReport: null,
+      aiReport,
       analysisId,
+      ...(aiError && { aiError }),
     });
   } catch (err) {
     console.error("job-match/analyze error:", err);

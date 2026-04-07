@@ -6,19 +6,13 @@ import { Menu, X, Sparkles, ArrowRight } from '@/components/icons'
 import Link from 'next/link'
 import ThemeSwitch from '../theme-switch'
 
-const repoUrl =
-  typeof process !== 'undefined'
-    ? (process.env.NEXT_PUBLIC_GITHUB_REPO_URL?.trim() ?? '')
-    : ''
-const ossNavHref = repoUrl || '/#oss'
-
 const navItems = [
   { name: 'Features', href: '/#features' },
   { name: 'How it works', href: '/#services' },
-  { name: 'Open source', href: ossNavHref },
-] as const
+  { name: 'Pricing', href: '/#pricing' },
+]
 
-export default function Navbar({ userId = null }: { userId?: string | null }) {
+export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
@@ -52,57 +46,32 @@ export default function Navbar({ userId = null }: { userId?: string | null }) {
           aria-label="Main"
           className="border-border bg-muted/60 hidden items-center gap-1 rounded-full border px-2 py-1.5 lg:flex"
         >
-          {navItems.map((item) => {
-            const external = item.href.startsWith('http')
-            return external ? (
-              <a
-                key={item.name}
-                href={item.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-foreground hover:text-primary hover:bg-background rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
-              >
-                {item.name}
-              </a>
-            ) : (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="text-foreground hover:text-primary hover:bg-background rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
-              >
-                {item.name}
-              </Link>
-            )
-          })}
+          {navItems.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className="text-muted-foreground hover:text-foreground hover:bg-background rounded-full px-4 py-1.5 text-sm font-medium transition-colors"
+            >
+              {item.name}
+            </Link>
+          ))}
         </nav>
 
         {/* Desktop actions */}
         <div className="hidden items-center gap-3 lg:flex">
-          {userId ? (
-            <Link
-              href={`/users/${userId}/resumes`}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors"
-            >
-              My resumes
-              <ArrowRight className="size-3.5" />
-            </Link>
-          ) : (
-            <>
-              <Link
-                href="/sign-in"
-                className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/sign-up"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors"
-              >
-                Get started
-                <ArrowRight className="size-3.5" />
-              </Link>
-            </>
-          )}
+          <Link
+            href="/sign-in"
+            className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/sign-up"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors"
+          >
+            Get started
+            <ArrowRight className="size-3.5" />
+          </Link>
           <ThemeSwitch />
         </div>
 
@@ -131,59 +100,31 @@ export default function Navbar({ userId = null }: { userId?: string | null }) {
             className="border-border bg-background border-t lg:hidden"
           >
             <div className="mx-auto max-w-6xl space-y-1 px-4 py-4 sm:px-6">
-              {navItems.map((item) => {
-                const external = item.href.startsWith('http')
-                const className =
-                  'text-foreground hover:bg-muted block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors'
-                return external ? (
-                  <a
-                    key={item.name}
-                    href={item.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={className}
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    {item.name}
-                  </a>
-                ) : (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={className}
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    {item.name}
-                  </Link>
-                )
-              })}
+              {navItems.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className="text-foreground hover:bg-muted block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              ))}
               <div className="border-border mt-3 flex flex-col gap-2 border-t pt-4">
-                {userId ? (
-                  <Link
-                    href={`/users/${userId}/resumes`}
-                    className="bg-primary text-primary-foreground block rounded-full py-2.5 text-center text-sm font-medium"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    My resumes
-                  </Link>
-                ) : (
-                  <>
-                    <Link
-                      href="/sign-in"
-                      className="text-foreground hover:bg-muted block rounded-lg px-3 py-2.5 text-center text-sm font-medium transition-colors"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      Sign in
-                    </Link>
-                    <Link
-                      href="/sign-up"
-                      className="bg-primary text-primary-foreground block rounded-full py-2.5 text-center text-sm font-medium"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      Get started
-                    </Link>
-                  </>
-                )}
+                <Link
+                  href="/sign-in"
+                  className="text-foreground hover:bg-muted block rounded-lg px-3 py-2.5 text-center text-sm font-medium transition-colors"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/sign-up"
+                  className="bg-primary text-primary-foreground block rounded-full py-2.5 text-center text-sm font-medium"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Get started
+                </Link>
               </div>
             </div>
           </motion.div>

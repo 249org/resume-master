@@ -31,10 +31,10 @@ export function HomeFaqSection() {
     <section
       id="faq"
       aria-labelledby="faq-heading"
-      className="bg-card relative overflow-hidden py-20 md:py-28"
+      className="relative overflow-hidden bg-card py-20 md:py-28"
     >
       {/* fade into bg-background (footer) below */}
-      <div className="from-background pointer-events-none absolute right-0 bottom-0 left-0 h-28 bg-gradient-to-t to-transparent" />
+      <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-28 bg-gradient-to-t from-background to-transparent" />
       <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <p className="text-primary mb-3 text-xs font-semibold tracking-widest uppercase">

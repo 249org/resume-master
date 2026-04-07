@@ -74,10 +74,7 @@ const plans = [
 const comparisonRows = [
   { feature: 'AI Credits / Month', values: ['50', 'Unlimited', 'Unlimited'] },
   { feature: 'PDF Exports', values: ['3', 'Unlimited', 'Unlimited'] },
-  {
-    feature: 'Analysis Engine',
-    values: ['Basic (GPT-3.5)', '⚡ Gemini Pro', 'Custom / Gemini Ultra'],
-  },
+  { feature: 'Analysis Engine', values: ['Basic (GPT-3.5)', '⚡ Gemini Pro', 'Custom / Gemini Ultra'] },
   { feature: 'Cover Letter Generator', values: [false, true, true] },
   { feature: 'ATS Keyword Optimization', values: [false, true, true] },
   { feature: 'Version History', values: [false, true, true] },
@@ -123,16 +120,14 @@ export default function PricingPage() {
       {/* Glow blobs matching landing page style */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         <div className="bg-primary/10 absolute -top-[10%] left-[50%] h-[40%] w-[60%] -translate-x-1/2 rounded-full blur-3xl" />
-        <div className="bg-primary/5 absolute top-[30%] -right-[10%] h-[40%] w-[40%] rounded-full blur-3xl" />
+        <div className="bg-primary/5 absolute -right-[10%] top-[30%] h-[40%] w-[40%] rounded-full blur-3xl" />
       </div>
 
       {/* Header */}
       <section className="mx-auto max-w-5xl px-6 py-20 text-center">
         <h1 className="text-4xl font-bold lg:text-5xl">
           Build a Better Resume,{' '}
-          <span className="text-primary underline decoration-wavy">
-            Faster.
-          </span>
+          <span className="text-primary underline decoration-wavy">Faster.</span>
         </h1>
         <p className="mt-4 text-lg">
           Simple pricing for developers and job seekers. No hidden fees. Cancel
@@ -193,7 +188,7 @@ export default function PricingPage() {
                 </div>
               </CardHeader>
               <CardContent className="flex-1">
-                <hr className="mb-4 border-dashed" />
+                <hr className="border-dashed mb-4" />
                 <ul className="space-y-3">
                   {plan.features.map((feature, fi) => (
                     <li key={fi} className="flex items-center gap-2 text-sm">
@@ -205,9 +200,7 @@ export default function PricingPage() {
                       ) : (
                         <>
                           <X className="text-foreground/30 h-4 w-4 shrink-0" />
-                          <span className="text-foreground/40 text-xs line-through">
-                            Unavailable
-                          </span>
+                          <span className="text-foreground/40 line-through text-xs">Unavailable</span>
                         </>
                       )}
                     </li>
@@ -215,12 +208,7 @@ export default function PricingPage() {
                 </ul>
               </CardContent>
               <CardFooter>
-                <Button
-                  asChild
-                  variant={plan.ctaVariant}
-                  className="w-full"
-                  size="lg"
-                >
+                <Button asChild variant={plan.ctaVariant} className="w-full" size="lg">
                   <Link href={plan.href}>
                     {i === 1 && <Zap className="mr-2 h-4 w-4" />}
                     {plan.cta}
@@ -234,20 +222,14 @@ export default function PricingPage() {
 
       {/* Comparison Table */}
       <section className="mx-auto max-w-5xl px-6 py-16">
-        <h2 className="mb-8 text-center text-2xl font-semibold">
-          Compare Plans
-        </h2>
+        <h2 className="mb-8 text-center text-2xl font-semibold">Compare Plans</h2>
         <div className="rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-1/2 font-semibold">
-                  Core Feature
-                </TableHead>
+                <TableHead className="w-1/2 font-semibold">Core Feature</TableHead>
                 <TableHead className="text-center">Weekend Warrior</TableHead>
-                <TableHead className="text-primary text-center font-bold">
-                  Job Hunter
-                </TableHead>
+                <TableHead className="text-primary text-center font-bold">Job Hunter</TableHead>
                 <TableHead className="text-center">Agency</TableHead>
               </TableRow>
             </TableHeader>
@@ -264,9 +246,7 @@ export default function PricingPage() {
                           <X className="text-foreground/30 mx-auto h-4 w-4" />
                         )
                       ) : (
-                        <span
-                          className={`text-sm ${i === 1 ? 'text-primary font-semibold' : ''}`}
-                        >
+                        <span className={`text-sm ${i === 1 ? 'text-primary font-semibold' : ''}`}>
                           {val}
                         </span>
                       )}
@@ -299,28 +279,11 @@ export default function PricingPage() {
       {/* Footer */}
       <footer className="border-t py-8">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-6 text-sm sm:flex-row">
-          <p className="text-foreground">
-            © 2024 ResumeAI Inc. All rights reserved.
-          </p>
+          <p className="text-foreground">© 2024 ResumeAI Inc. All rights reserved.</p>
           <div className="flex gap-6">
-            <Link
-              href="#"
-              className="text-foreground hover:text-foreground/80 transition-colors"
-            >
-              Privacy Policy
-            </Link>
-            <Link
-              href="#"
-              className="text-foreground hover:text-foreground/80 transition-colors"
-            >
-              Terms of Service
-            </Link>
-            <Link
-              href="#"
-              className="text-foreground hover:text-foreground/80 transition-colors"
-            >
-              Twitter
-            </Link>
+            <Link href="#" className="text-foreground hover:text-foreground/80 transition-colors">Privacy Policy</Link>
+            <Link href="#" className="text-foreground hover:text-foreground/80 transition-colors">Terms of Service</Link>
+            <Link href="#" className="text-foreground hover:text-foreground/80 transition-colors">Twitter</Link>
           </div>
         </div>
       </footer>

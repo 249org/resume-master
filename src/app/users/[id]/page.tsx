@@ -14,5 +14,5 @@ export default async function Page({
     redirect('/sign-in')
   }
   const { id } = await params
-  redirect(`/users/${id}/resumes`)
+  redirect(`/users/${id}/resume-builder`)
 }

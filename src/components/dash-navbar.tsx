@@ -5,7 +5,7 @@ import ThemeSwitch from '@/components/theme-switch'
 export default async function DashNavBar() {
   return (
     <section>
-      <div className="flex justify-between gap-4 px-6 py-4 md:px-8">
+      <div className="flex justify-between gap-4 p-4 pl-0">
         <div>
           <SidebarTrigger />
         </div>

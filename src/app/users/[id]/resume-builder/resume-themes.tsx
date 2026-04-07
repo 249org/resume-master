@@ -20,7 +20,6 @@ export interface Education {
 export interface ResumeData {
   fullName: string
   jobTitle: string
-  bio: string
   email: string
   phone: string
   location: string
@@ -94,15 +93,6 @@ export function ClassicTheme({ data, colors }: { data: ResumeData; colors: Theme
         <div style={{ height: '1.5px', background: c, marginTop: 14 }} />
       </div>
 
-      {data.bio.trim() && (
-        <div style={{ marginBottom: '2rem' }}>
-          {sectionHeader('Bio')}
-          <div style={{ fontSize: 12, color: '#333', lineHeight: 1.8, whiteSpace: 'pre-line', textAlign: 'left' }}>
-            {data.bio}
-          </div>
-        </div>
-      )}
-
       {/* ── Experience ── */}
       {data.experiences.length > 0 && (
         <div style={{ marginBottom: '2rem' }}>
@@ -175,13 +165,6 @@ export function OceanTheme({ data, colors }: { data: ResumeData; colors: ThemeCo
           {data.linkedin && <span style={{ color: accent }}>🔗 {data.linkedin}</span>}
         </div>
       </div>
-
-      {data.bio.trim() && (
-        <div style={{ marginBottom: '1.5rem' }}>
-          <div style={{ background: accent, color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', padding: '4px 10px', marginBottom: '0.9rem' }}>Bio</div>
-          <div style={{ paddingLeft: 10, color: '#444', lineHeight: 1.75, whiteSpace: 'pre-line' }}>{data.bio}</div>
-        </div>
-      )}
 
       {data.experiences.length > 0 && (
         <div style={{ marginBottom: '1.5rem' }}>
@@ -273,12 +256,6 @@ export function SidebarTheme({ data, colors }: { data: ResumeData; colors: Theme
       </div>
 
       <div style={{ flex: 1, background: '#fff', padding: '2rem 1.75rem' }}>
-        {data.bio.trim() && (
-          <div style={{ marginBottom: '1.35rem' }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: sidebarBg, borderBottom: `2px solid ${accent}`, paddingBottom: 4, marginBottom: '0.65rem' }}>Bio</div>
-            <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.75, whiteSpace: 'pre-line' }}>{data.bio}</div>
-          </div>
-        )}
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: sidebarBg, borderBottom: `2px solid ${accent}`, paddingBottom: 4, marginBottom: '1rem' }}>Experience</div>
         {data.experiences.map((exp) => (
           <div key={exp.id} style={{ marginBottom: '1.1rem' }}>
@@ -314,15 +291,6 @@ export function BoldTheme({ data, colors }: { data: ResumeData; colors: ThemeCol
       </div>
 
       <div style={{ padding: '1.75rem 2.5rem' }}>
-        {data.bio.trim() && (
-          <div style={{ marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.6rem' }}>
-              <div style={{ width: 4, height: 16, background: accent, borderRadius: 2 }} />
-              <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2 }}>Bio</div>
-            </div>
-            <div style={{ color: '#555', lineHeight: 1.75, whiteSpace: 'pre-line', paddingLeft: 14 }}>{data.bio}</div>
-          </div>
-        )}
         {data.experiences.length > 0 && (
           <div style={{ marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.75rem' }}>
@@ -393,16 +361,6 @@ export function MinimalTheme({ data, colors }: { data: ResumeData; colors: Theme
         </div>
       </div>
 
-      {data.bio.trim() && (
-        <div style={{ marginBottom: '1.75rem' }}>
-          <div style={{ fontSize: 9, letterSpacing: 4, textTransform: 'uppercase', color: accent, marginBottom: '0.6rem', fontWeight: 600 }}>Bio</div>
-          <div style={{ color: '#555', lineHeight: 1.75, whiteSpace: 'pre-line', fontSize: 12, maxWidth: 560, margin: '0 auto', textAlign: 'left' }}>
-            {data.bio}
-          </div>
-          <div style={{ borderBottom: '1px solid #e8e8e8', marginTop: '1.25rem' }} />
-        </div>
-      )}
-
       {data.experiences.length > 0 && (
         <div style={{ marginBottom: '1.75rem' }}>
           <div style={{ fontSize: 9, letterSpacing: 4, textTransform: 'uppercase', color: accent, marginBottom: '0.75rem', fontWeight: 600 }}>Experience</div>
@@ -463,15 +421,6 @@ export function ExecutiveTheme({ data, colors }: { data: ResumeData; colors: The
       </div>
 
       <div style={{ padding: '1.75rem 2.5rem' }}>
-        {data.bio.trim() && (
-          <div style={{ marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.65rem' }}>
-              <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, color: headerBg }}>Bio</div>
-              <div style={{ flex: 1, height: 1, background: accent }} />
-            </div>
-            <div style={{ color: '#444', lineHeight: 1.75, whiteSpace: 'pre-line' }}>{data.bio}</div>
-          </div>
-        )}
         {data.experiences.length > 0 && (
           <div style={{ marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '0.9rem' }}>

@@ -1,22 +1,13 @@
-import HomeAtsCheck from '@/components/file-upload/home-ats-check'
+import ProgressUpload from '@/components/file-upload/progress-upload'
 import { HomeFaqSection } from '@/components/mvpblocks/home-faq'
 import {
   CareerToolkitSection,
   HowItWorksSection,
-  OpenSourceSection,
 } from '@/components/mvpblocks/home-page-sections'
+import Pricing from '@/components/mvpblocks/pricing'
 import { Status, StatusIndicator } from '@/components/hero-badge'
-import { auth } from '@/lib/auth'
-import { headers } from 'next/headers'
-
-export const dynamic = 'force-dynamic'
 
 export default async function page() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  })
-  const homeUserId = session?.user?.id ?? null
-
   return (
     <div className="bg-background">
       {/* hero */}
@@ -31,7 +22,7 @@ export default async function page() {
           }}
         />
         {/* Very soft bottom fade into next section */}
-        <div className="from-card pointer-events-none absolute right-0 bottom-0 left-0 h-32 bg-gradient-to-t to-transparent" />
+        <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-32 bg-gradient-to-t from-card to-transparent" />
 
         <Status status="online" className="bg-secondary-foreground">
           <StatusIndicator />
@@ -44,15 +35,15 @@ export default async function page() {
           </span>
         </h1>
         <p className="text-muted-foreground mt-6 max-w-xl text-center text-lg leading-relaxed">
-          Check how your resume lines up with applicant tracking systems, then
-          refine it in the manual builder — no paid APIs required.
+          Instantly check if your resume passes applicant tracking systems.
+          Upload below for a free ATS score.
         </p>
-        <HomeAtsCheck homeUserId={homeUserId} className="mt-10 w-full max-w-xl" />
+        <ProgressUpload className="bg-secondary-foreground mt-10 w-full max-w-xl" />
       </section>
 
       <CareerToolkitSection />
-      <HowItWorksSection userId={homeUserId} />
-      <OpenSourceSection />
+      <HowItWorksSection />
+      <Pricing />
       <HomeFaqSection />
     </div>
   )
