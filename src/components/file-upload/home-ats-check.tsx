@@ -5,7 +5,11 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { CloudUpload, Upload as UploadIcon, FileTextIcon } from '@/components/icons'
+import {
+  CloudUpload,
+  Upload as UploadIcon,
+  FileTextIcon,
+} from '@/components/icons'
 import { cn } from '@/lib/utils'
 import { extractTextFromFile, checkFile } from '@/lib/resume-extract'
 import {
@@ -203,7 +207,7 @@ export default function HomeAtsCheck({
           </div>
 
           <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-foreground">
+            <h3 className="text-foreground text-lg font-semibold">
               Free ATS check
             </h3>
             <p className="text-muted-foreground text-sm font-medium">
@@ -226,16 +230,12 @@ export default function HomeAtsCheck({
             className="cursor-pointer rounded-full"
           >
             <UploadIcon className="size-4" />
-            {busy
-              ? homeUserId
-                ? 'Analyzing…'
-                : 'Checking…'
-              : 'Select file'}
+            {busy ? (homeUserId ? 'Analyzing…' : 'Checking…') : 'Select file'}
           </Button>
 
           <Badge
             variant="outline"
-            className="bg-primary/10 text-primary border-primary/20 max-w-sm text-center text-xs font-normal"
+            className="bg-primary/10 text-primary border-primary/20 max-w-lg text-center text-xs font-normal"
           >
             Guests see a short preview. Sign in to save the full ATS report to
             your account.
@@ -256,7 +256,7 @@ export default function HomeAtsCheck({
               <FileTextIcon className="text-primary size-5" />
             </div>
             <div className="min-w-0 flex-1 space-y-2">
-              <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+              <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                 Preview · {summary.jobTypeLabel}
               </p>
               <p className="text-foreground text-2xl font-semibold tabular-nums">
