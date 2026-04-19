@@ -75,7 +75,7 @@ export default function RootLayout({
     name: siteConfig.name,
     description: siteConfig.description,
     url: siteUrl,
-    logo: `${siteUrl}/icon`,
+    logo: `${siteUrl}/icon.svg`,
   }
 
   return (
