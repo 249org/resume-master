@@ -1,19 +1,20 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   CloudUpload,
+  Sparkles,
   Upload as UploadIcon,
   FileTextIcon,
 } from '@/components/icons'
 import { cn } from '@/lib/utils'
 import { extractTextFromFile, checkFile } from '@/lib/resume-extract'
+import { JobTypeCombobox } from '@/components/job-type-combobox'
 import {
-  HOME_ATS_DEFAULT_JOB_TYPE_ID,
   PENDING_ATS_STORAGE_KEY,
   PENDING_ATS_VERSION,
   type PendingAtsPayload,
@@ -40,18 +41,25 @@ export default function HomeAtsCheck({
   const [error, setError] = useState<string | null>(null)
   const [summary, setSummary] = useState<PreviewSummary | null>(null)
   const [fileLabel, setFileLabel] = useState<string | null>(null)
+  const [resumeText, setResumeText] = useState<string | null>(null)
+  const [jobTypeId, setJobTypeId] = useState<string>('')
+
+  useEffect(() => {
+    setSummary(null)
+    setError(null)
+  }, [jobTypeId])
 
   const signInHref = `/sign-in?callbackUrl=${encodeURIComponent('/continue/job-match')}`
   const signUpHref = `/sign-up?callbackUrl=${encodeURIComponent('/continue/job-match')}`
 
   const runForLoggedInUser = useCallback(
-    async (text: string, name: string) => {
+    async (text: string, name: string, roleId: string) => {
       const res = await fetch('/api/job-match/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           resumeText: text.trim(),
-          jobTypeId: HOME_ATS_DEFAULT_JOB_TYPE_ID,
+          jobTypeId: roleId,
           fileName: name,
         }),
       })
@@ -72,87 +80,123 @@ export default function HomeAtsCheck({
     [homeUserId, router]
   )
 
-  const runGuestPreview = useCallback(async (text: string, name: string) => {
-    const res = await fetch('/api/job-match/ats-preview', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        resumeText: text.trim(),
-        jobTypeId: HOME_ATS_DEFAULT_JOB_TYPE_ID,
-      }),
-    })
-    const data = (await res.json()) as {
-      error?: string
-      summary?: PreviewSummary
-    }
-    if (!res.ok) {
-      setError(data.error ?? 'Preview failed.')
-      return
-    }
-    if (!data.summary) {
-      setError('Unexpected response from server.')
-      return
-    }
-    setSummary(data.summary)
-    const payload: PendingAtsPayload = {
-      v: PENDING_ATS_VERSION,
-      resumeText: text.trim(),
-      fileName: name,
-      jobTypeId: HOME_ATS_DEFAULT_JOB_TYPE_ID,
-    }
-    try {
-      sessionStorage.setItem(PENDING_ATS_STORAGE_KEY, JSON.stringify(payload))
-    } catch {
-      // ignore quota / private mode
-    }
-  }, [])
-
-  const processFile = useCallback(
-    async (file: File | null) => {
-      if (!file) return
-      setError(null)
-      setSummary(null)
-      setFileLabel(file.name)
-      const err = checkFile(file)
-      if (err) {
-        setError(err)
+  const runGuestPreview = useCallback(
+    async (text: string, name: string, roleId: string) => {
+      const res = await fetch('/api/job-match/ats-preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resumeText: text.trim(),
+          jobTypeId: roleId,
+        }),
+      })
+      const data = (await res.json()) as {
+        error?: string
+        summary?: PreviewSummary
+      }
+      if (!res.ok) {
+        setError(data.error ?? 'Preview failed.')
         return
       }
-      setBusy(true)
+      if (!data.summary) {
+        setError('Unexpected response from server.')
+        return
+      }
+      setSummary(data.summary)
+      const payload: PendingAtsPayload = {
+        v: PENDING_ATS_VERSION,
+        resumeText: text.trim(),
+        fileName: name,
+        jobTypeId: roleId,
+      }
       try {
-        const result = await extractTextFromFile(file)
-        if (!result.ok) {
-          setError(result.error)
-          return
-        }
-        if (result.text.trim().length < 100) {
-          setError(
-            'Not enough text could be read from this file. Try another PDF or DOCX.'
-          )
-          return
-        }
-        if (homeUserId) {
-          await runForLoggedInUser(result.text, file.name)
-        } else {
-          await runGuestPreview(result.text, file.name)
-        }
-      } finally {
-        setBusy(false)
+        sessionStorage.setItem(PENDING_ATS_STORAGE_KEY, JSON.stringify(payload))
+      } catch {
+        // ignore quota / private mode
       }
     },
-    [homeUserId, runForLoggedInUser, runGuestPreview]
+    []
   )
 
-  const clearResult = () => {
-    setSummary(null)
+  const resetFile = useCallback(() => {
+    setResumeText(null)
     setFileLabel(null)
+    setJobTypeId('')
+    setSummary(null)
     setError(null)
     try {
       sessionStorage.removeItem(PENDING_ATS_STORAGE_KEY)
     } catch {
       /* ignore */
     }
+  }, [])
+
+  /** Step 1: read file only — role is chosen afterward. */
+  const processFile = useCallback(async (file: File | null) => {
+    if (!file) return
+    setError(null)
+    setSummary(null)
+    setResumeText(null)
+    setJobTypeId('')
+    setFileLabel(file.name)
+    const err = checkFile(file)
+    if (err) {
+      setError(err)
+      setFileLabel(null)
+      return
+    }
+    setBusy(true)
+    try {
+      const result = await extractTextFromFile(file)
+      if (!result.ok) {
+        setError(result.error)
+        setFileLabel(null)
+        return
+      }
+      if (result.text.trim().length < 100) {
+        setError(
+          'Not enough text could be read from this file. Try another PDF or DOCX.'
+        )
+        setFileLabel(null)
+        return
+      }
+      setResumeText(result.text)
+      setJobTypeId('')
+    } finally {
+      setBusy(false)
+    }
+  }, [])
+
+  /** Step 2: run ATS with chosen role. */
+  const runAnalysis = useCallback(async () => {
+    if (!resumeText?.trim() || !fileLabel || !jobTypeId.trim()) return
+    setError(null)
+    setBusy(true)
+    try {
+      if (homeUserId) {
+        await runForLoggedInUser(resumeText, fileLabel, jobTypeId)
+      } else {
+        await runGuestPreview(resumeText, fileLabel, jobTypeId)
+      }
+    } finally {
+      setBusy(false)
+    }
+  }, [
+    resumeText,
+    fileLabel,
+    jobTypeId,
+    homeUserId,
+    runForLoggedInUser,
+    runGuestPreview,
+  ])
+
+  const clearResult = () => {
+    setSummary(null)
+    resetFile()
   }
+
+  const hasResume = !!resumeText
+  const canRun = hasResume && !!jobTypeId.trim() && !busy
 
   return (
     <div className={cn('w-full max-w-xl rounded-xl', className)}>
@@ -191,7 +235,7 @@ export default function HomeAtsCheck({
           }}
         />
 
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex w-full flex-col items-center gap-4">
           <div
             className={cn(
               'flex h-16 w-16 items-center justify-center rounded-full',
@@ -206,20 +250,12 @@ export default function HomeAtsCheck({
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 text-center">
             <h3 className="text-foreground text-lg font-semibold">
               Free ATS check
             </h3>
             <p className="text-muted-foreground text-sm font-medium">
               Drag and drop your resume PDF or DOCX (up to 5 MB)
-            </p>
-            <p className="text-muted-foreground mx-auto max-w-sm text-xs leading-relaxed">
-              Preview uses a sample role ({' '}
-              <span className="text-foreground font-medium">
-                Software Engineer
-              </span>
-              ). After sign-in you can pick any title and keep full reports in
-              Analyze resume.
             </p>
           </div>
 
@@ -230,8 +266,62 @@ export default function HomeAtsCheck({
             className="cursor-pointer rounded-full"
           >
             <UploadIcon className="size-4" />
-            {busy ? (homeUserId ? 'Analyzing…' : 'Checking…') : 'Select file'}
+            {!hasResume && busy
+              ? 'Reading resume…'
+              : hasResume
+                ? 'Replace file'
+                : 'Select file'}
           </Button>
+
+          {hasResume && (
+            <>
+              <p className="text-muted-foreground w-full max-w-md text-center text-xs">
+                <span className="text-foreground font-medium">{fileLabel}</span>
+                {' · '}
+                <button
+                  type="button"
+                  className="text-primary underline-offset-2 hover:underline"
+                  onClick={resetFile}
+                >
+                  Clear
+                </button>
+              </p>
+
+              <div className="w-full max-w-md space-y-2 text-left">
+                <label
+                  htmlFor="home-ats-job-type"
+                  className="text-foreground text-sm font-medium"
+                >
+                  Target role
+                </label>
+                <JobTypeCombobox
+                  id="home-ats-job-type"
+                  value={jobTypeId}
+                  onChange={setJobTypeId}
+                />
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  The ATS check scores your resume against this role’s keyword
+                  profile. You can change it before running the check.
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                onClick={() => void runAnalysis()}
+                disabled={!canRun}
+                className="cursor-pointer rounded-full"
+              >
+                <Sparkles className="size-4" />
+                {busy && hasResume
+                  ? homeUserId
+                    ? 'Analyzing…'
+                    : 'Checking…'
+                  : homeUserId
+                    ? 'Analyze resume'
+                    : 'Run ATS check'}
+              </Button>
+            </>
+          )}
 
           <Badge
             variant="outline"

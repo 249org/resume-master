@@ -1,6 +1,6 @@
 /** sessionStorage payload after a guest home ATS preview (consumed on job-match after sign-in). */
 
-/** Default role for home preview and post-login save (matches API default). */
+/** Fallback when API requests omit `jobTypeId` (home flow always sends an explicit role). */
 export const HOME_ATS_DEFAULT_JOB_TYPE_ID = "software-engineer";
 
 export const PENDING_ATS_STORAGE_KEY = "rm_pending_ats";

@@ -8,12 +8,11 @@ import { Card } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command'
+import { JobTypeCombobox } from '@/components/job-type-combobox'
 import { Upload, CloudUpload, AlertTriangle, CheckCircle, BarChart2, FileText } from '@/components/icons'
-import { Loader2, X, ChevronsUpDown, Check, FolderOpen, Trash2 } from 'lucide-react'
+import { Loader2, X, FolderOpen, Trash2 } from 'lucide-react'
 import PageTitle from '@/components/page-title'
-import { JOB_TYPES, JOB_TYPE_CATEGORIES } from '@/lib/job-types'
+import { JOB_TYPES } from '@/lib/job-types'
 import { extractTextFromFile, checkFile } from '@/lib/resume-extract'
 import { getAllResumes, savedResumeToText, type SavedResume } from '@/lib/resume-storage'
 import { cn } from '@/lib/utils'
@@ -153,65 +152,6 @@ function ScoreRing({ score }: { score: number }) {
   )
 }
 
-// ── Job type combobox ────────────────────────────────────────────────────────
-function JobTypeCombobox({
-  value,
-  onChange,
-  compact = false,
-}: {
-  value: string
-  onChange: (v: string) => void
-  compact?: boolean
-}) {
-  const [open, setOpen] = useState(false)
-  const selected = JOB_TYPES.find((j) => j.id === value)
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn(
-            'justify-between font-normal',
-            compact ? 'h-8 gap-1.5 px-2.5 text-xs' : 'h-11 w-full gap-2 text-sm'
-          )}
-        >
-          <span className={cn('truncate', !selected && 'text-muted-foreground')}>
-            {selected ? selected.label : 'Search job title…'}
-          </span>
-          <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[320px] p-0" align="start">
-        <Command>
-          <CommandInput placeholder="Search job titles…" />
-          <CommandList>
-            <CommandEmpty>No results found.</CommandEmpty>
-            {JOB_TYPE_CATEGORIES.map((cat) => (
-              <CommandGroup key={cat} heading={cat}>
-                {JOB_TYPES.filter((j) => j.category === cat).map((job) => (
-                  <CommandItem
-                    key={job.id}
-                    value={job.label}
-                    onSelect={() => {
-                      onChange(job.id)
-                      setOpen(false)
-                    }}
-                  >
-                    <Check className={cn('mr-2 h-4 w-4', value === job.id ? 'opacity-100' : 'opacity-0')} />
-                    {job.label}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            ))}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  )
-}
 
 // ── Main page ────────────────────────────────────────────────────────────────
 function JobMatchPage() {
