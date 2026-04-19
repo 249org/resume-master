@@ -62,6 +62,11 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  // Static file in /public — avoids app/icon metadata route (OpenNext + Cloudflare edge bundle issue).
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+  },
 }
 
 export default function RootLayout({
