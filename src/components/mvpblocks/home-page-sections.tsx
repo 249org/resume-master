@@ -47,10 +47,10 @@ export function CareerToolkitSection() {
     <section
       id="features"
       aria-labelledby="toolkit-heading"
-      className="relative overflow-hidden bg-card py-20 md:py-28"
+      className="bg-card relative overflow-hidden py-20 md:py-28"
     >
       {/* fade into bg-background below */}
-      <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-28 bg-gradient-to-t from-background to-transparent" />
+      <div className="from-background pointer-events-none absolute right-0 bottom-0 left-0 h-28 bg-gradient-to-t to-transparent" />
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-primary mb-3 text-xs font-semibold tracking-widest uppercase">
@@ -63,7 +63,8 @@ export function CareerToolkitSection() {
             Everything you need to land the interview
           </h2>
           <p className="text-muted-foreground mt-4 text-base leading-relaxed">
-            Free, self-hostable tools: ATS-style checks plus a manual builder — no paid API or cloud AI required.
+            Free, self-hostable tools: ATS-style checks plus a manual builder —
+            no paid API or cloud AI required.
           </p>
         </div>
 
@@ -100,10 +101,10 @@ export function HowItWorksSection({
     <section
       id="services"
       aria-labelledby="how-heading"
-      className="relative overflow-hidden bg-background py-20 md:py-28"
+      className="bg-background relative overflow-hidden py-20 md:py-28"
     >
       {/* fade into next section below */}
-      <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-28 bg-gradient-to-t from-muted to-transparent" />
+      <div className="from-muted pointer-events-none absolute right-0 bottom-0 left-0 h-28 bg-gradient-to-t to-transparent" />
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-16 lg:grid-cols-2 lg:items-center">
           <div>
@@ -156,15 +157,15 @@ export function HowItWorksSection({
 }
 
 export function OpenSourceSection() {
-  const repoUrl = process.env.NEXT_PUBLIC_GITHUB_REPO_URL?.trim() || ''
+  const repoUrl = 'https://github.com/249org/resume-master'
 
   return (
     <section
       id="oss"
       aria-labelledby="oss-heading"
-      className="relative overflow-hidden bg-muted py-20 md:py-28"
+      className="bg-muted relative overflow-hidden py-20 md:py-28"
     >
-      <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-28 bg-gradient-to-t from-card to-transparent" />
+      <div className="from-card pointer-events-none absolute right-0 bottom-0 left-0 h-28 bg-gradient-to-t to-transparent" />
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-primary mb-3 text-xs font-semibold tracking-widest uppercase">
@@ -177,7 +178,8 @@ export function OpenSourceSection() {
             Free to use and self-host
           </h2>
           <p className="text-muted-foreground mt-4 text-base leading-relaxed">
-            No subscriptions or checkout flows — fork the repo, run it locally or on your own stack, and adapt it for your team.
+            No subscriptions or checkout flows — fork the repo, run it locally
+            or on your own stack, and adapt it for your team.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Button className="gap-2 rounded-full px-6" asChild>
@@ -195,15 +197,6 @@ export function OpenSourceSection() {
               <Link href="/#faq">Read the FAQ</Link>
             </Button>
           </div>
-          {!repoUrl ? (
-            <p className="text-muted-foreground mt-4 text-xs">
-              Set{' '}
-              <code className="rounded bg-background px-1 py-0.5 font-mono text-[11px]">
-                NEXT_PUBLIC_GITHUB_REPO_URL
-              </code>{' '}
-              to your repository URL.
-            </p>
-          ) : null}
         </div>
       </div>
     </section>
