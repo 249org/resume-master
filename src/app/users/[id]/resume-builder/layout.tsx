@@ -1,3 +1,21 @@
+import type { Metadata } from 'next'
+import { pageMetadata } from '@/lib/seo'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
+  return pageMetadata({
+    title: 'Resume builder',
+    description:
+      'Build and edit your resume manually in Resume Master—sections, themes, and export to PDF.',
+    path: `/users/${id}/resume-builder`,
+    noIndex: true,
+  })
+}
+
 /**
  * Fills the dashboard main region; horizontal inset comes from parent `main` (`p-5`)
  * like other user pages.

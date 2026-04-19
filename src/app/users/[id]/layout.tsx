@@ -1,6 +1,11 @@
 import { AppSidebar } from '@/components/app-sidebar'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import DashNavBar from '@/components/dash-navbar'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: true },
+}
 
 export default function layout({ children }: { children: React.ReactNode }) {
   return (

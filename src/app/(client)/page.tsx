@@ -7,9 +7,16 @@ import {
 } from '@/components/mvpblocks/home-page-sections'
 import { Status, StatusIndicator } from '@/components/hero-badge'
 import { auth } from '@/lib/auth'
+import { pageMetadata, siteConfig } from '@/lib/seo'
 import { headers } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata = pageMetadata({
+  title: 'ATS resume checker & builder',
+  description: siteConfig.description,
+  path: '/',
+})
 
 export default async function page() {
   const session = await auth.api.getSession({

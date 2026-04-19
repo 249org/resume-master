@@ -2,10 +2,18 @@ import PageTitle from '@/components/page-title'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { auth } from '@/lib/auth'
+import { pageMetadata } from '@/lib/seo'
 import { headers } from 'next/headers'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata = pageMetadata({
+  title: 'Payment successful',
+  description:
+    'Your Resume Master checkout completed successfully. You can continue to your dashboard and resume tools.',
+  path: '/success',
+})
 
 type Props = {
   searchParams: Promise<{
