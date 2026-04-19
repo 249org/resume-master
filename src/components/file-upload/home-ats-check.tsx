@@ -25,6 +25,8 @@ type PreviewSummary = {
   jobTypeLabel: string
   jobTypeId: string
   teaser: string
+  moreFeedback?: string[]
+  statsLine?: string
 }
 
 export default function HomeAtsCheck({
@@ -355,9 +357,23 @@ export default function HomeAtsCheck({
                   / 100
                 </span>
               </p>
-              <p className="text-muted-foreground text-sm leading-relaxed">
+              <p className="text-foreground text-sm leading-relaxed">
                 {summary.teaser}
               </p>
+              {(summary.moreFeedback?.length ?? 0) > 0 && (
+                <ul className="text-muted-foreground mt-3 list-inside list-disc space-y-2 text-sm leading-relaxed">
+                  {summary.moreFeedback!.map((line, i) => (
+                    <li key={i} className="pl-0.5">
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {summary.statsLine && (
+                <p className="text-muted-foreground mt-2 text-xs">
+                  {summary.statsLine}
+                </p>
+              )}
               {fileLabel && (
                 <p className="text-muted-foreground text-xs">{fileLabel}</p>
               )}

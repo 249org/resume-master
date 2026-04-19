@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { runAtsEngine } from "@/lib/ats-engine";
+import { buildGuestAtsPreviewCopy, runAtsEngine } from "@/lib/ats-engine";
 import { getJobType } from "@/lib/job-types";
 import {
   checkGuestAtsPreviewRateLimit,
@@ -64,19 +64,18 @@ export async function POST(request: Request) {
         : resumeText;
 
     const report = runAtsEngine(sanitizedText, jobTypeId);
-
-    const teaser =
-      report.strongPoints[0] ??
-      report.weakPoints[0] ??
-      report.suggestions[0] ??
-      "Sign in for the full breakdown: strengths, gaps, and tailored suggestions.";
+    const copy = buildGuestAtsPreviewCopy(report);
+    const wordCount = sanitizedText.trim().split(/\s+/).filter(Boolean).length;
+    const statsLine = `${wordCount.toLocaleString()} words · ${sanitizedText.length.toLocaleString()} characters analyzed`;
 
     return NextResponse.json({
       summary: {
         score: report.score,
         jobTypeLabel: jobType.label,
         jobTypeId,
-        teaser,
+        teaser: copy.teaser,
+        moreFeedback: copy.moreFeedback,
+        statsLine,
       },
     });
   } catch (err) {
