@@ -11,6 +11,8 @@ export type ParsedResumeFromText = {
   experiences: Experience[]
   education: Education[]
   skills: string[]
+  /** True when we fell back to putting most of the CV in the bio (messy/flat PDFs). */
+  usedFullTextFallback: boolean
 }
 
 const EMAIL_RE = /\b[\w.+-]+@[\w-]+\.[\w.-]+\b/gi
@@ -24,39 +26,96 @@ const DATE_RANGE_LINE =
   /(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z.]*\s+)?\d{4}|\b20\d{2}/i
 const RANGE_DASH = /\s[–—\-]\s|\s+to\s+|\s+-\s+/i
 
-const SECTION_MATCHERS: {
-  key: "bio" | "experiences" | "education" | "skills"
-  test: (s: string) => boolean
-}[] = [
-    {
-      key: "bio",
-      test: (s) =>
-        /^(?:professional\s+)?summary$|^profile$|^about$|^objective$|^career\s+objective$|^qualifications?\s+summary$/i.test(
-          s
-        ),
-    },
-    {
-      key: "experiences",
-      test: (s) =>
-        /^(?:work|professional|employment|career)\s+experience$|^employment$|^experience$|^relevant\s+experience$/i.test(
-          s
-        ),
-    },
-    {
-      key: "education",
-      test: (s) =>
-        /^education$|^academic(\s+background|s)?$|^university$|^academic(\s+qualifications)?$|^qualifications$|^educational\s+background$/i.test(
-          s
-        ),
-    },
-    {
-      key: "skills",
-      test: (s) =>
-        /^(?:technical|core|key|relevant|professional|computer)?\s*skills$|^expertise$|^competenc(?:y|ies)$|^core\s+competencies$|^tools?\s+(&|and|\/)\s*technologies$|^technical\s+proficiencies$|^key\s+skills$/i.test(
-          s
-        ),
-    },
-  ]
+/** Full line match after normalize — allows bullets, numbers, colons, markdown */
+function matchSectionType(normalized: string): "bio" | "experiences" | "education" | "skills" | null {
+  const s = normalized
+  if (s.length < 2 || s.length > 90) {
+    return null
+  }
+  if (s.includes(".") && s.length > 62) {
+    return null
+  }
+  if (
+    /^(?:(?:professional|career|qualifications?)\s+)?(?:summary|profile|objective|overview|about|highlights?)$/i.test(
+      s
+    ) ||
+    /^(?:personal\s+)?profile$/i.test(s)
+  ) {
+    return "bio"
+  }
+  if (
+    /^(?:(?:work|relevant|professional|key|selected|recent|previous)\s+)?(?:employment|work)?\s*experience$|^career(\s+history)?$|^employment(\s+history)?$|^experience$|^work\s+history$/i.test(
+      s
+    ) ||
+    /^relevant\s+projects$/i.test(s)
+  ) {
+    return "experiences"
+  }
+  if (
+    /^(?:academic|educational)?\s*(?:background|qualifications?|history)?$|^education$|^academics$|^academic$|^university$|^universities$|^qualifications$|^qualification$/i.test(
+      s
+    )
+  ) {
+    return "education"
+  }
+  if (
+    /^(?:(?:technical|core|key|relevant|computer|it|soft)\s+)?(?:skills?|expertise|competenc(?:y|ies))$/i.test(
+      s
+    ) ||
+    /^core\s+competencies$|^tool(?:s|kit)?$|^languages?$|^stack$/i.test(s)
+  ) {
+    return "skills"
+  }
+  if (
+    /^(?:\d+\.?\s*)?experience\.?$/i.test(s) &&
+    s.length < 20
+  ) {
+    return "experiences"
+  }
+  if (/^(?:\d+\.?\s*)?education\.?$/i.test(s) && s.length < 20) {
+    return "education"
+  }
+  if (/^(?:\d+\.?\s*)?skills?\.?$/i.test(s) && s.length < 18) {
+    return "skills"
+  }
+  return null
+}
+
+function normalizeLineForSection(line: string): string {
+  return line
+    .replace(/^\*+|#+|\*+$/g, "")
+    .replace(/^\d+[\.\)\-:]\s*/, "")
+    .replace(/^[[(]?\d+[\].)]\s*/, "")
+    .replace(/^[-•*▪·]+\s*/u, "")
+    .replace(/\s*:+\s*$/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+}
+
+/** If PDF squashed the CV into few lines, insert breaks before obvious section words. */
+function ensureNewlinesBeforeSectionKeywords(text: string): string {
+  if (text.split("\n").length >= 7 || text.length < 200) return text
+  return text
+    .replace(
+      /([a-z.!?0-9)%])([ \t]{1,2})((?:(?:Relevant|Key|Work|Employment|Professional|Career)\s+)(?:History|Experience)|(?:Employment|Work)\s+History|Experience)\b/gi,
+      "$1\n\n$3"
+    )
+    .replace(
+      /([a-z.!?0-9)%])([ \t]{1,2})((?:Academic|Educational|Higher)\s+)?(Education|Qualifications)\b/gi,
+      "$1\n\n$4"
+    )
+    .replace(
+      /([a-z.!?0-9)%])([ \t]{1,2})((?:Core|Key|Relevant|Technical|Professional|Computer)\s+)?(Skills?|Competencies)\b/gi,
+      (all, a, _s, pfx, w) => {
+        if (/\b(?:soft|people|communication|Java|Python)\s+skills?\b/i.test(all)) return all
+        return `${a}\n\n${(pfx || "") + w}`
+      }
+    )
+    .replace(
+      /([a-z.!?0-9)%])([ \t]{1,2})((?:(?:Professional|Executive|Personal|Career)\s+)?(?:Summary|Profile|Overview)|Career\s+Objectives?)\b/gi,
+      "$1\n\n$3"
+    )
+}
 
 let idCounter = 0
 function nextId() {
@@ -65,12 +124,15 @@ function nextId() {
 }
 
 function stripUrlLike(line: string): string {
-  return line.replace(EMAIL_RE, " ").replace(LINKEDIN_RE, " ").replace(PHONE_RE, " ").trim()
+  return line
+    .replace(EMAIL_RE, " ")
+    .replace(LINKEDIN_RE, " ")
+    .replace(PHONE_RE, " ")
+    .trim()
 }
 
 function extractContacts(text: string) {
-  const email =
-    (text.match(EMAIL_RE)?.[0] ?? "").toLowerCase() || ""
+  const email = (text.match(EMAIL_RE)?.[0] ?? "").toLowerCase() || ""
   const liMatch = text.match(LINKEDIN_RE)
   const linkedin = liMatch
     ? liMatch[0].replace(/^https?:\/\/(www\.)?/i, "https://")
@@ -86,32 +148,18 @@ function extractContacts(text: string) {
   return { email, phone, linkedin }
 }
 
-function isSectionHeaderLine(line: string): boolean {
+function isProbableHeaderLine(line: string): boolean {
   const s = line.trim()
-  if (s.length < 3 || s.length > 65) return false
-  if (s.includes(".") && s.length > 40) return false
-  for (const { test } of SECTION_MATCHERS) {
-    if (test(s)) return true
-  }
-  if (/^[A-Z][A-Z\s&/\-]{2,50}$/.test(s) && s.length < 50) {
-    if (/^SKILLS$|^EDUCATION$|^EXPERIENCE$/i.test(s)) return true
+  if (s.length < 2 || s.length > 80) return false
+  if (matchSectionType(normalizeLineForSection(s))) return true
+  if (/^#{1,3}\s+/.test(s) || /^\*+\s+\*?/.test(s)) return /experience|education|skill|summary|profile/i.test(s)
+  if (/^[A-Z][A-Z\s&/\-:]{1,50}$/u.test(s) && s.length < 52) {
+    if (/EXPERIENCE|EDUCATION|SKILLS|SUMMARY|PROFILE|EMPLOYMENT|QUALIFICATION/i.test(s)) return true
   }
   return false
 }
 
 type Section = "preamble" | "bio" | "experiences" | "education" | "skills" | "other"
-function classifySectionLine(line: string): Section {
-  const s = line.trim()
-  for (const m of SECTION_MATCHERS) {
-    if (m.test(s)) {
-      if (m.key === "bio") return "bio"
-      if (m.key === "experiences") return "experiences"
-      if (m.key === "education") return "education"
-      if (m.key === "skills") return "skills"
-    }
-  }
-  return "other"
-}
 
 function refineSegments(lines: string[]): { section: Section; text: string }[] {
   const segs: { section: Section; text: string }[] = []
@@ -135,13 +183,34 @@ function refineSegments(lines: string[]): { section: Section; text: string }[] {
       if (buf.length) buf.push("")
       continue
     }
-    const kind = classifySectionLine(l)
-    if (kind !== "other") {
+    const n = normalizeLineForSection(l)
+    const sec = matchSectionType(n)
+    if (sec) {
       flush()
-      cur = kind
+      cur = sec
       continue
     }
-    if (isSectionHeaderLine(l)) {
+    if (isProbableHeaderLine(l) && n.length < 50) {
+      if (/educ|qualif|academic/i.test(n)) {
+        flush()
+        cur = "education"
+        continue
+      }
+      if (/exper|work|employ|project|position|career|history|intern/i.test(n)) {
+        flush()
+        cur = "experiences"
+        continue
+      }
+      if (/skill|competen|expert|technolog|stack|langua|tool/i.test(n)) {
+        flush()
+        cur = "skills"
+        continue
+      }
+      if (/summary|profile|objective|overview|about|highlight/i.test(n)) {
+        flush()
+        cur = "bio"
+        continue
+      }
       flush()
       cur = "other"
       continue
@@ -164,79 +233,7 @@ function joinSection(
     .join("\n\n")
 }
 
-function guessNameTitle(preamble: string) {
-  const contactFree = extractContacts(preamble)
-  let t = preamble
-  if (contactFree.email) t = t.replace(EMAIL_RE, " ")
-  if (contactFree.linkedin) {
-    t = t.replace(
-      new RegExp(
-        contactFree.linkedin.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-        "gi"
-      ),
-      " "
-    )
-  }
-  if (contactFree.phone) t = t.replace(PHONE_RE, " ")
-  t = t.replace(LINKEDIN_RE, " ")
-  const lineArr = t
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(
-      (l) =>
-        l.length > 0 &&
-        !EMAIL_RE.test(l) &&
-        !LINKEDIN_RE.test(l) &&
-        !/linkedin\.com/i.test(l) &&
-        !/^\W*phone/i.test(l) &&
-        !/^\W*email/i.test(l) &&
-        !/^\W*e-mail/i.test(l)
-    )
-  let fullName = ""
-  let jobTitle = ""
-  let i = 0
-  for (; i < lineArr.length; i++) {
-    const line = lineArr[i]!
-    if (EMAIL_RE.test(line) || /^\d[\d\s\-()]+$/.test(line)) continue
-    const wc = line.split(/\s+/).length
-    if (wc >= 2 && wc <= 6 && !/@/.test(line) && !DATE_RANGE_LINE.test(line)) {
-      if (!/^\d+[\s%]/.test(line)) {
-        fullName = line
-        i++
-        break
-      }
-    }
-  }
-  if (i < lineArr.length) {
-    const candidate = lineArr[i]!
-    if (
-      candidate.length > 0 &&
-      candidate.length < 120 &&
-      !EMAIL_RE.test(candidate) &&
-      !/^[A-Z\s]{4,50}$/.test(candidate)
-    ) {
-      jobTitle = candidate
-    }
-  }
-  return { fullName, jobTitle }
-}
-
-function pickLocation(preamble: string, name: string) {
-  const lines = preamble.split("\n").map((l) => l.trim())
-  for (const line of lines) {
-    if (line.length > 3 && line.length < 100 && /,/.test(line)) {
-      if (line === name) continue
-      if (/[A-Z][a-zA-Z]/.test(line) && !EMAIL_RE.test(line) && !LINKEDIN_RE.test(line)) {
-        if (!DATE_RANGE_LINE.test(line)) {
-          if (/[A-Z]{2}\s+\d{5}|[A-Z]{2},?\s*[A-Z][a-z]+/.test(line) || /,\s*[A-Z][a-z]/.test(line)) {
-            return line
-          }
-        }
-      }
-    }
-  }
-  return ""
-}
+const DATE_IN_LINE = /(?:\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z.]*\s+)?\d{4}|\b20\d{2}/i
 
 function parseDateRangeInText(block: string): { start: string; end: string; rest: string } {
   const m = block.match(
@@ -246,7 +243,10 @@ function parseDateRangeInText(block: string): { start: string; end: string; rest
     const i = m.index ?? 0
     const start = m[1]!.trim()
     const end = m[2]!.trim()
-    const rest = (block.slice(0, i) + block.slice(i + m[0]!.length)).replace(/\n{3,}/g, "\n\n")
+    const rest = (block.slice(0, i) + block.slice(i + m[0]!.length)).replace(
+      /\n{3,}/g,
+      "\n\n"
+    )
     return { start, end, rest: rest.trim() }
   }
   return { start: "", end: "", rest: block }
@@ -254,7 +254,7 @@ function parseDateRangeInText(block: string): { start: string; end: string; rest
 
 function parseExperienceBlock(text: string): Experience | null {
   const t = text.trim()
-  if (t.length < 8) return null
+  if (t.length < 6) return null
   const { start, end, rest } = parseDateRangeInText(t)
   const lines = rest
     .split("\n")
@@ -298,8 +298,8 @@ function parseExperienceBlock(text: string): Experience | null {
     }
   }
   if (!company && second) {
-    if (DATE_RANGE_LINE.test(second) || RANGE_DASH.test(second)) {
-      // date line, third might be company
+    if (DATE_IN_LINE.test(second) && RANGE_DASH.test(second)) {
+      /* single-line title; company below */
     } else {
       company = second.split(/\s*[|–—]\s*/)[0]!.split(/\s+\(/)[0]!.trim()
     }
@@ -307,7 +307,7 @@ function parseExperienceBlock(text: string): Experience | null {
   const bodyLines: string[] = []
   for (const ln of lines) {
     if (ln === head || (company && ln === second)) continue
-    if (DATE_RANGE_LINE.test(ln) && RANGE_DASH.test(ln) && !bodyLines.length) continue
+    if (DATE_IN_LINE.test(ln) && RANGE_DASH.test(ln) && !bodyLines.length) continue
     if (ln === second && company) continue
     bodyLines.push(ln)
   }
@@ -327,13 +327,13 @@ function parseExperienceBlock(text: string): Experience | null {
         l !== company &&
         l !== title &&
         l !== second &&
-        !(DATE_RANGE_LINE.test(l) && l.length < 40 && RANGE_DASH.test(l))
+        !(DATE_IN_LINE.test(l) && l.length < 40 && RANGE_DASH.test(l))
     )
     .join("\n")
   return {
     id: nextId(),
     title: title || head.slice(0, 200),
-    company: company || "—",
+    company: company || (start || end ? "—" : head.slice(0, 40)),
     location,
     startDate: start,
     endDate: end,
@@ -359,10 +359,10 @@ function splitIntoExperienceEntries(section: string): string[] {
         continue
       }
       if (
-        DATE_RANGE_LINE.test(line) &&
+        DATE_IN_LINE.test(line) &&
         RANGE_DASH.test(line) &&
         chunk.length >= 1 &&
-        /.{10,}/.test(chunk[0]!)
+        /.{6,}/.test(chunk[0]!)
       ) {
         if (chunk.length) blocks.push(chunk.join("\n"))
         chunk.length = 0
@@ -390,62 +390,133 @@ function parseExperiencesFromSection(section: string): Experience[] {
   return out
 }
 
-function parseEducationSection(section: string): Education[] {
+/** When there are no "Experience" section headers, split on date ranges. */
+function inferExperiencesFromUnstructured(_preamble: string, full: string): Experience[] {
+  const out: Experience[] = []
+  for (const para of full.split(/\n{2,}/)) {
+    const p = para.trim()
+    if (p.length < 20) continue
+    if (DATE_IN_LINE.test(p) && RANGE_DASH.test(p)) {
+      const e = parseExperienceBlock(p)
+      if (e && (e.startDate || e.endDate)) out.push(e)
+    }
+  }
+  if (out.length) return out
+  return parseExperiencesFromSection(full).filter((e) => e.startDate || e.endDate)
+}
+
+const EDU_HINT =
+  /(?:Bachelor|B\.?S\.?c?|B\.?A\.?|Master|M\.?S\.?|M\.?B\.?A\.?|Ph\.?D|Doctor|Associate|Diploma|Certificate|B\.?Sc|B\.?E\.?|B\.?Tech|M\.?Eng)/i
+const SCHOOL_HINT =
+  /(University|College|Institute|Polytechnic|School|Academy)(?:\s+of\s+[\w\s]+)?/i
+
+function inferEducationFromText(text: string): Education[] {
   const out: Education[] = []
-  const chunks = section.split(/\n{2,}/)
-  for (const c of chunks) {
-    const lines = c
-      .split("\n")
-      .map((l) => l.replace(/^[-•*]\s*/, "").trim())
-      .filter(Boolean)
-    if (!lines.length) continue
-    const line0 = lines.join(" ")
-    const yearM = line0.match(/\b(20\d{2}|19\d{2})\b/g)
+  for (const c of text.split(/\n{2,}/)) {
+    const t = c.trim()
+    if (t.length < 15 || t.length > 500) continue
+    if (!EDU_HINT.test(t) && !SCHOOL_HINT.test(t)) continue
+    if (/^\d+[\s.]*years?\s+(?:at|with)/i.test(t)) continue
+    const lines = t.split("\n").map((l) => l.trim()).filter(Boolean)
+    const yearM = t.match(/\b(20\d{2}|19\d{2})\b/g)
     const year = (yearM && yearM[yearM.length - 1]) || ""
-    let school = ""
-    let degree = ""
-    if (lines.length === 1) {
-      const l = line0
-      if (l.includes("—") || l.includes("–") || l.includes(" - ")) {
-        const parts = l.split(/[—–-]\s*|\s+at\s+/i)
-        if (parts.length >= 2) {
-          degree = parts[0]!.trim()
-          school = parts[1]!.replace(/\b20\d{2}\b.*/, "").trim()
+    const schoolMatch = t.match(SCHOOL_HINT)
+    let school = schoolMatch
+      ? t.slice(
+          t.search(SCHOOL_HINT),
+          Math.min(t.length, t.search(SCHOOL_HINT) + 80)
+        )
+      : "—"
+    if (lines.length >= 2) {
+      const maybeSchool = lines.find((l) => SCHOOL_HINT.test(l)) ?? school
+      school = maybeSchool
+    }
+    const degree = lines[0]!.length < 5 ? t.slice(0, 120) : lines[0]!
+    out.push({
+      id: nextId(),
+      degree: degree.replace(/\s+/g, " ").trim(),
+      school: school.replace(/\s+/g, " ").trim().split("\n")[0]!,
+      year: year || "",
+    })
+  }
+  return out.slice(0, 6)
+}
+
+function inferSkillsFromBlob(text: string): string[] {
+  for (const line of text.split("\n")) {
+    const l = line.replace(/^[-•*]\s*/, "").trim()
+    if (l.length > 20 && l.split(/[,;·]/).length >= 6) {
+      return parseSkillsSection(l)
+    }
+  }
+  return []
+}
+
+function parseEducationSection(section: string): Education[] {
+  const structured = (() => {
+    const out: Education[] = []
+    const chunks = section.split(/\n{2,}/)
+    for (const c of chunks) {
+      const lines = c
+        .split("\n")
+        .map((l) => l.replace(/^[-•*]\s*/, "").trim())
+        .filter(Boolean)
+      if (!lines.length) continue
+      const line0 = lines.join(" ")
+      const yearM = line0.match(/\b(20\d{2}|19\d{2})\b/g)
+      const year = (yearM && yearM[yearM.length - 1]) || ""
+      let school = ""
+      let degree = ""
+      if (lines.length === 1) {
+        const l = line0
+        if (l.includes("—") || l.includes("–") || l.includes(" - ")) {
+          const parts = l.split(/[—–-]\s*|\s+at\s+/i)
+          if (parts.length >= 2) {
+            degree = parts[0]!.trim()
+            school = parts[1]!.replace(/\b20\d{2}\b.*/, "").trim()
+          } else {
+            degree = l
+          }
         } else {
           degree = l
+          const uni = l.match(
+            /([A-Z][A-Za-z\s&'.,-]+?(?:University|College|Institute|School|Polytechnic|Academy))/
+          )
+          if (uni) {
+            school = uni[1]!
+            degree = l.replace(uni[0]!, "").replace(/^[,;]\s*/, "").trim()
+          }
         }
       } else {
-        degree = l
-        const uni = l.match(
-          /([A-Z][A-Za-z\s&'.,-]+?(?:University|College|Institute|School|Polytechnic|Academy))/
-        )
-        if (uni) {
-          school = uni[1]!
-          degree = l.replace(uni[0]!, "").replace(/^[,;]\s*/, "").trim()
-        }
+        degree = lines[0]!
+        school = lines[1]!
       }
-    } else {
-      degree = lines[0]!
-      school = lines[1]!
+      if (degree && degree.length < 3) {
+        school = [degree, school].filter(Boolean).join(" — ")
+      }
+      if (!degree) degree = line0
+      if (degree && degree.length < 4 && !year) continue
+      out.push({
+        id: nextId(),
+        degree: degree.replace(/\s+/g, " ").trim() || "Education",
+        school: (school || "—").replace(/\s+/g, " ").trim(),
+        year: year || "",
+      })
     }
-    if (degree && degree.length < 3) {
-      school = [degree, school].filter(Boolean).join(" — ")
-    }
-    if (!degree) degree = line0
-    if (degree && degree.length < 4 && !year) continue
-    out.push({ id: nextId(), degree: degree.replace(/\s+/g, " ").trim() || "Education", school: (school || "—").replace(/\s+/g, " ").trim(), year: year || "" })
-  }
-  return out
+    return out
+  })()
+  if (structured.length) return structured
+  return inferEducationFromText(section)
 }
 
 function parseSkillsSection(section: string): string[] {
   const t = section.replace(/\n/g, ",")
-  const parts = t.split(/[,;|/]|(?:\s{2,})/)
+  const parts = t.split(/[,;|/·]|(?:\s{2,})/)
   const skills = new Set<string>()
   for (const p of parts) {
     const s = p.replace(/^[–•*\-·]\s*/, "").trim()
     if (s.length > 1 && s.length < 60 && /[A-Za-z]/.test(s)) {
-      if (!/^\d+(\.\d+)?$/.test(s)) skills.add(s)
+      if (!/^\d+(\.\d+)?$/.test(s) && !/years?$/i.test(s)) skills.add(s)
     }
   }
   if (skills.size < 2) {
@@ -463,11 +534,125 @@ function truncateBio(s: string, max: number) {
   return t.slice(0, max) + (t.length > max ? "…" : "")
 }
 
+function guessNameTitle(preamble: string) {
+  const contactFree = extractContacts(preamble)
+  let t = preamble
+  if (contactFree.email) t = t.replace(EMAIL_RE, " ")
+  if (contactFree.linkedin) {
+    t = t.replace(
+      new RegExp(
+        contactFree.linkedin.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+        "gi"
+      ),
+      " "
+    )
+  }
+  if (contactFree.phone) t = t.replace(PHONE_RE, " ")
+  t = t.replace(LINKEDIN_RE, " ")
+
+  const asLines = t.split("\n")
+  if (asLines.length === 1 && asLines[0]!.length > 200) {
+    t = asLines[0]!.split(/\s{2,}|\s*[|•]\s*/)[0] ?? asLines[0]!
+  }
+
+  const lineArr = t
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(
+      (l) =>
+        l.length > 0 &&
+        !EMAIL_RE.test(l) &&
+        !LINKEDIN_RE.test(l) &&
+        !/linkedin\.com/i.test(l) &&
+        !/^\W*phone/i.test(l) &&
+        !/^\W*e-?mail/i.test(l) &&
+        !/^\W*e-mail/i.test(l) &&
+        !/^\W*name\s*:/i.test(l)
+    )
+  let fullName = ""
+  let jobTitle = ""
+  let i = 0
+  for (; i < lineArr.length; i++) {
+    const line = lineArr[i]!
+    if (EMAIL_RE.test(line) || /^\d[\d\s\-()]{8,}$/.test(line)) continue
+    const wc = line.split(/\s+/).length
+    if (wc >= 2 && wc <= 7 && !/@/.test(line) && !DATE_IN_LINE.test(line)) {
+      if (!/^\d+[\s%]/.test(line) && !/^\d+[\.)]\s/.test(line)) {
+        fullName = line.replace(/^(?:name|applicant|candidate)\s*:\s*/i, "")
+        i++
+        break
+      }
+    }
+  }
+  if (i < lineArr.length) {
+    const candidate = lineArr[i]!
+    if (
+      candidate.length > 0 &&
+      candidate.length < 120 &&
+      !EMAIL_RE.test(candidate) &&
+      !/^[A-Z][A-Z\s]{3,50}$/u.test(candidate)
+    ) {
+      if (!/^\d+[\.\)]\s/.test(candidate) && !DATE_IN_LINE.test(candidate)) {
+        jobTitle = candidate
+      }
+    }
+  }
+  if (!fullName && lineArr[0] && lineArr[0]!.length < 100) {
+    fullName = lineArr[0]!
+  }
+  return { fullName, jobTitle }
+}
+
+function pickLocation(preamble: string, name: string) {
+  const lines = preamble.split("\n").map((l) => l.trim())
+  for (const line of lines) {
+    if (line.length > 3 && line.length < 100 && /,/.test(line)) {
+      if (line === name) continue
+      if (
+        /[A-Za-z]/.test(line) &&
+        !EMAIL_RE.test(line) &&
+        !LINKEDIN_RE.test(line)
+      ) {
+        if (!DATE_IN_LINE.test(line)) {
+          if (
+            /[A-Z]{2}\s+\d{5}|[A-Z]{2},?\s*[A-Z]/.test(line) ||
+            /,\s*[A-Z][a-z]/.test(line)
+          ) {
+            return line
+          }
+        }
+      }
+    }
+  }
+  return ""
+}
+
+function scoreParse(r: {
+  fullName: string
+  jobTitle: string
+  bio: string
+  email: string
+  experiences: Experience[]
+  education: Education[]
+  skills: string[]
+}) {
+  let s = 0
+  if (r.email) s += 2
+  if (r.fullName) s += 1
+  if (r.jobTitle) s += 1
+  if (r.bio && r.bio.length > 40) s += 2
+  s += r.experiences.length * 2
+  s += r.education.length
+  s += r.skills.length > 2 ? 2 : r.skills.length > 0 ? 1 : 0
+  return s
+}
+
 export function parseResumeTextToForm(raw: string): ParsedResumeFromText {
   idCounter = 0
-  const text = raw.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\t/g, " ")
-  const { email, phone, linkedin } = extractContacts(text)
+  let text = raw.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\t/g, " ")
+  text = ensureNewlinesBeforeSectionKeywords(text)
 
+  const { email, phone, linkedin } = extractContacts(text)
   const lines = text.split("\n")
   const segs = refineSegments(lines)
   const preambleSeg = segs.find((s) => s.section === "preamble")
@@ -475,7 +660,7 @@ export function parseResumeTextToForm(raw: string): ParsedResumeFromText {
   const educationText = joinSection(segs, "education")
   const skillsText = joinSection(segs, "skills")
 
-  const preamble = (preambleSeg?.text ?? text.slice(0, 4000)).trim()
+  const preamble = (preambleSeg?.text ?? text.slice(0, 8000)).trim()
   const { fullName, jobTitle } = guessNameTitle(preamble)
   const location = pickLocation(preamble, fullName)
 
@@ -488,7 +673,11 @@ export function parseResumeTextToForm(raw: string): ParsedResumeFromText {
         .join("\n")
         .split(/\n{2,}/)[0]!
         .trim()
-      if (tail && tail.length < 1200 && !/^\s*(experience|work history)\b/i.test(tail)) {
+      if (
+        tail &&
+        tail.length < 1600 &&
+        !/^\s*(experience|work history)\b/i.test(tail)
+      ) {
         bio = tail
       }
     }
@@ -497,7 +686,7 @@ export function parseResumeTextToForm(raw: string): ParsedResumeFromText {
     stripUrlLike(
       bio
         .split("\n")
-        .filter((l) => !isSectionHeaderLine(l))
+        .filter((l) => !isProbableHeaderLine(l))
         .join("\n")
     ),
     1800
@@ -505,12 +694,9 @@ export function parseResumeTextToForm(raw: string): ParsedResumeFromText {
 
   if (!bio && !experienceText) {
     const preOnly = preambleSeg?.text
-    if (preOnly) {
-      const p = preOnly
-      if (p.length < 2000) {
-        const cut = p.split("\n\n")[0] ?? p
-        if (cut && cut.length < 1500) bio = truncateBio(cut, 800)
-      }
+    if (preOnly && preOnly.length < 2000) {
+      const cut = preOnly.split("\n\n")[0] ?? preOnly
+      if (cut && cut.length < 1500) bio = truncateBio(cut, 800)
     }
   }
 
@@ -520,7 +706,30 @@ export function parseResumeTextToForm(raw: string): ParsedResumeFromText {
     bio = truncateBio(firstBlock, 1200) || ""
   }
 
-  return {
+  let experiences = experienceText
+    ? parseExperiencesFromSection(experienceText)
+    : []
+  let education = educationText ? parseEducationSection(educationText) : []
+  let skills = skillsText ? parseSkillsSection(skillsText) : []
+
+  if (!experiences.length) {
+    const inferred = inferExperiencesFromUnstructured(preamble, text)
+    if (inferred.length) experiences = inferred
+  }
+  if (!education.length) {
+    const inferred = inferEducationFromText(
+      [preamble, educationText, joinSection(segs, "other")].filter(Boolean).join("\n\n")
+    )
+    if (inferred.length) education = inferred
+  }
+  if (skills.length < 2) {
+    const fromBlob = inferSkillsFromBlob(
+      [joinSection(segs, "preamble"), skillsText].join("\n\n")
+    )
+    if (fromBlob.length) skills = fromBlob
+  }
+
+  const candidate: ParsedResumeFromText = {
     fullName,
     jobTitle,
     email,
@@ -528,8 +737,35 @@ export function parseResumeTextToForm(raw: string): ParsedResumeFromText {
     location: location.replace(/\s+/g, " ").trim(),
     linkedin,
     bio,
-    education: educationText ? parseEducationSection(educationText) : [],
-    skills: skillsText ? parseSkillsSection(skillsText) : [],
-    experiences: experienceText ? parseExperiencesFromSection(experienceText) : [],
+    education,
+    skills,
+    experiences,
+    usedFullTextFallback: false,
   }
+
+  const hasSectionStructure = Boolean(
+    experienceText || educationText || skillsText || joinSection(segs, "bio")
+  )
+  const noExtracted =
+    candidate.experiences.length === 0 &&
+    candidate.education.length === 0 &&
+    candidate.skills.length < 2
+  const bioLooksEmpty = candidate.bio.length < 100
+  const needsFallback =
+    text.length > 200 &&
+    noExtracted &&
+    bioLooksEmpty &&
+    (!hasSectionStructure || scoreParse(candidate) < 3)
+
+  if (needsFallback) {
+    const cap = 12_000
+    candidate.bio = truncateBio(text.trim(), cap)
+    if (!candidate.experiences.length) {
+      const lastTry = parseExperiencesFromSection(text)
+      if (lastTry.length) candidate.experiences = lastTry
+    }
+    candidate.usedFullTextFallback = true
+  }
+
+  return candidate
 }

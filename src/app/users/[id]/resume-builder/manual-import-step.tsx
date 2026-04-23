@@ -48,7 +48,7 @@ export function ManualImportStep({
     <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col space-y-6">
       <PageTitle
         title="How would you like to start?"
-        subtitle="Open a blank document and fill in each section, or import a PDF or Word file. We detect common section headings (Summary, Experience, Education, Skills) and split text into the right fields — you can always edit after. Nothing is uploaded until you save."
+        subtitle="Import a PDF or Word file or start from scratch. We read section headings when they exist, guess jobs from dates, and pull education and skills when we can. Messy or flat PDFs still open with the full text in your summary so nothing is lost — move lines into Experiences or Skills as you like. Nothing is uploaded until you save."
       />
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8 lg:items-stretch">
