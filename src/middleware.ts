@@ -4,10 +4,18 @@ import { NextRequest, NextResponse } from "next/server";
 // dynamic code evaluation. We do a lightweight cookie-presence check here for
 // fast UX redirects. Full session validation happens in each protected
 // server component / API route via auth.api.getSession().
-const SESSION_COOKIE = "better-auth.session_token";
+// On HTTPS, Better Auth sets `__Secure-better-auth.session_token` (see cookie builder in better-auth).
+const SESSION_COOKIES = [
+  "better-auth.session_token",
+  "__Secure-better-auth.session_token",
+] as const;
+
+function hasSessionCookie(request: NextRequest): boolean {
+  return SESSION_COOKIES.some((name) => request.cookies.has(name));
+}
 
 export function middleware(request: NextRequest) {
-  const hasSession = request.cookies.has(SESSION_COOKIE);
+  const hasSession = hasSessionCookie(request);
   if (!hasSession) {
     const signIn = new URL("/sign-in", request.url);
     signIn.searchParams.set("callbackUrl", request.nextUrl.pathname);
