@@ -10,6 +10,9 @@
 #
 # Skip the secret step (e.g. CI that injects secrets another way):
 #   SKIP_CF_SECRETS=1 ./scripts/deploy-cloudflare.sh
+#
+# Cloudflare/GitHub build images usually have no .dev.vars (gitignored). The deploy still
+# succeeds; secrets should live in the dashboard or be pushed from a protected CI secret file.
 
 set -euo pipefail
 
@@ -24,4 +27,10 @@ if [[ "${SKIP_CF_SECRETS:-}" == "1" ]]; then
   exit 0
 fi
 
-exec bash scripts/push-auth-secrets-to-cloudflare.sh "${1:-}"
+SECRETS_FILE="${1:-$ROOT/.dev.vars}"
+if [[ ! -f "$SECRETS_FILE" ]]; then
+  echo "No secrets file at $SECRETS_FILE (CI builds rarely commit .dev.vars). Deploy finished; manage Worker secrets in Cloudflare or run locally: npm run cf:secrets"
+  exit 0
+fi
+
+exec bash scripts/push-auth-secrets-to-cloudflare.sh "$SECRETS_FILE"
