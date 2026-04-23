@@ -4,6 +4,8 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
+	// Omit account_id so Wrangler uses the account from `wrangler login` (avoids mismatch if the ID drifts).
+	// For CI, set CLOUDFLARE_ACCOUNT_ID in the environment instead of committing an id here.
 	"name": "resume-master",
 	"main": ".open-next/worker.js",
 	"compatibility_date": "2025-03-01",

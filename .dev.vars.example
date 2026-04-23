@@ -1,6 +1,25 @@
-# Copy to `.dev.vars` for local `next dev` with OpenNext Cloudflare.
-# Values should mirror `.env` for billing — otherwise Polar may use stale/missing tokens.
+# Copy to `.dev.vars` (gitignored). Used by `wrangler dev` / OpenNext local Worker.
+# Auth secrets: push to Cloudflare with `./scripts/push-auth-secrets-to-cloudflare.sh`
 
+NEXTJS_ENV=development
+
+# Database (Neon, etc.)
+# DATABASE_URL=
+
+# Better Auth — same values as production secrets when deploying
+# BETTER_AUTH_SECRET=
+# BETTER_AUTH_URL=http://localhost:3000
+
+# OAuth apps (GitHub / Google)
+# GITHUB_CLIENT_ID=
+# GITHUB_CLIENT_SECRET=
+# GOOGLE_CLIENT_ID=
+# GOOGLE_CLIENT_SECRET=
+
+# Public site URL (must match BETTER_AUTH_URL origin for OAuth redirects)
+# NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Polar (optional local): copy from .env if checkout returns 401 in dev
 # POLAR_ACCESS_TOKEN=
 # POLAR_ENV=sandbox
 # POLAR_SUCCESS_URL=http://localhost:3000/success?checkout_id={CHECKOUT_ID}
