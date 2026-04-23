@@ -327,7 +327,7 @@ export default function HomeAtsCheck({
 
           <Badge
             variant="outline"
-            className="bg-primary/10 text-primary border-primary/20 max-w-lg text-center text-xs font-normal"
+            className="bg-primary/10 text-primary border-primary/20 max-w-full text-center text-xs font-normal lg:max-w-lg"
           >
             Guests see a short preview. Sign in to save the full ATS report to
             your account.
