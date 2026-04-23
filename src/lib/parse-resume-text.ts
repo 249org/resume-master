@@ -25,6 +25,17 @@ const LOOSE_PHONE = /\b\(?\d{3}\)?\s*[\-–.]?\s*\d{3}\s*[\-–.]?\s*\d{4}\b/g
 const DATE_RANGE_LINE =
   /(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z.]*\s+)?\d{4}|\b20\d{2}/i
 const RANGE_DASH = /\s[–—\-]\s|\s+to\s+|\s+-\s+/i
+const MONTH_NAMES =
+  "Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec"
+/**
+ * "Role | March 2024" — month abbreviations are ambiguous: "Mar" alone matches
+ * the start of "March" and the following `\\s+\\d{4}` does not, so the pipe
+ * is never found. Reuse the same "month word" tail as `DATE_IN_LINE`.
+ */
+const RX_PIPE_THEN_DATE = new RegExp(
+  `\\|\\s*(?:(?:(?:${MONTH_NAMES})[a-z.]*\\s+)?\\d{4}|[~]\\s*\\d)`,
+  "i"
+)
 
 /** Full line match after normalize — allows bullets, numbers, colons, markdown */
 function matchSectionType(normalized: string): "bio" | "experiences" | "education" | "skills" | null {
@@ -115,6 +126,466 @@ function ensureNewlinesBeforeSectionKeywords(text: string): string {
       /([a-z.!?0-9)%])([ \t]{1,2})((?:(?:Professional|Executive|Personal|Career)\s+)?(?:Summary|Profile|Overview)|Career\s+Objectives?)\b/gi,
       "$1\n\n$3"
     )
+}
+
+/** Remove common LLM tail that some PDFs carry. */
+function stripResumeFooterNoise(t: string): string {
+  return t
+    .replace(/\n\s*Let me know if you'd like[\s\S]*$/i, "")
+    .replace(/\n\s*Let me know if you would like[\s\S]*$/i, "")
+    .trim()
+}
+
+/**
+ * Many PDFs extract as one line: "Name  Title  phone | email | city  Summary  Text  Education  …"
+ * Insert unique markers at double-space section boundaries (case-sensitive labels to avoid "experience" in sentences).
+ */
+function insertSectionBoundaryMarkers(t: string): string {
+  return t
+    .replace(/\s{2,}Training\s*&\s*Courses?\s*/gi, "\n__TRN__\n")
+    .replace(/\s{2,}References\s*/gi, "\n__REF__\n")
+    .replace(/\s{2,}Volunteer Experience\s*/gi, "\n__VEX__\n")
+    .replace(/\s{2,}Work Experience\s*/gi, "\n__EXP__\n")
+    .replace(/\s{2,}Professional Experience\s*/gi, "\n__EXP__\n")
+    .replace(/\s{2,}Relevant Experience\s*/gi, "\n__EXP__\n")
+    .replace(/\s{2,}Employment History\s*/gi, "\n__EXP__\n")
+    .replace(/\s{2,}Summary\s*/g, "\n__SUM__\n")
+    .replace(/\s{2,}Education\s*/g, "\n__EDU__\n")
+    .replace(/\s{2,}Skills\s*/g, "\n__SKI__\n")
+    .replace(/\s{2,}Experience\s*/g, "\n__EXP__\n")
+}
+
+/** Turn boundary markers into readable newlines for the line-based parser fallback. */
+function markersToNewlines(m: string): string {
+  return m
+    .replace(/\n*__TRN__\n*/g, "\n\nTraining & Courses\n")
+    .replace(/\n*__REF__\n*/g, "\n\nReferences\n")
+    .replace(/\n*__VEX__\n*/g, "\n\nVolunteer Experience\n")
+    .replace(/\n*__SUM__\n*/g, "\n\nSummary\n")
+    .replace(/\n*__EDU__\n*/g, "\n\nEducation\n")
+    .replace(/\n*__SKI__\n*/g, "\n\nSkills\n")
+    .replace(/\n*__EXP__\n*/g, "\n\nExperience\n")
+}
+
+type MarkerKey = "SUM" | "EDU" | "SKI" | "EXP" | "VEX" | "TRN" | "REF"
+
+function parseMarkerSplit(
+  parts: string[]
+): Partial<Record<MarkerKey, string>> & { header: string } {
+  const out: Partial<Record<string, string>> & { header: string } = {
+    header: (parts[0] ?? "").trim(),
+  }
+  for (let i = 1; i < parts.length; i += 2) {
+    const key = parts[i] as MarkerKey
+    const val = (parts[i + 1] ?? "").trim()
+    if (key && val !== undefined) out[key] = val
+  }
+  return out as Partial<Record<MarkerKey, string>> & { header: string }
+}
+
+function isPlausibleNameLine(s: string): boolean {
+  const l = s.trim()
+  if (l.length < 2 || l.length > 60) return false
+  if (/[●•]/.test(l)) return false
+  if (/[|@]/.test(l)) return false
+  if (/^[\d+()\s.-]{8,}$/.test(l)) return false
+  if (/^skills?(\s|●|$)/i.test(l)) return false
+  if (/^experience(\s|$)/i.test(l)) return false
+  if (/^education(\s|$)/i.test(l)) return false
+  if (/^summary(\s|$)/i.test(l)) return false
+  if (/^references?(\s|$)/i.test(l)) return false
+  if (/\b(university|college|bachelor|master|resume|curriculum|engineering\s*&\s*technical)\b/i.test(l))
+    return false
+  return true
+}
+
+function parseNameTitleFromHeader(
+  header: string
+): { fullName: string; jobTitle: string; location: string } {
+  let h = header.replace(EMAIL_RE, " ").replace(PHONE_RE, " ").replace(LINKEDIN_RE, " ")
+  h = h.replace(/\+[\d\s]{7,20}/g, " ")
+  const byPipe = h.split(/\s*\|\s*/)
+  const head0 = (byPipe[0] ?? "").trim()
+  const segments = head0
+    .split(/\s{2,}/)
+    .map((x) => x.trim())
+    .filter(Boolean)
+  let fullName = ""
+  let jobTitle = ""
+  for (const seg of segments) {
+    if (!isPlausibleNameLine(seg)) continue
+    const wc = seg.split(/\s+/).length
+    if (!fullName && wc >= 2 && wc <= 5) {
+      fullName = seg
+      continue
+    }
+    if (fullName && !jobTitle && wc >= 1 && wc <= 12 && !EMAIL_RE.test(seg)) {
+      if (!DATE_IN_LINE.test(seg)) jobTitle = seg
+      break
+    }
+  }
+  if (!fullName && segments[0] && isPlausibleNameLine(segments[0]!)) {
+    const w = segments[0]!.split(/\s+/)
+    if (w.length >= 2 && w.length <= 5) fullName = segments[0]!
+  }
+  let location = ""
+  for (const p of byPipe) {
+    const t = p.trim()
+    if (
+      t.includes(",") &&
+      t.length < 90 &&
+      !EMAIL_RE.test(t) &&
+      !/^\d+[\d\s-]+$/.test(t)
+    ) {
+      if (!t.includes("http")) location = t
+    }
+  }
+  return { fullName, jobTitle, location: location.replace(/\s+/g, " ").trim() }
+}
+
+function cleanLeadingExperienceWord(s: string): string {
+  return s.replace(
+    /^(?:(?:(?:work|relevant|professional|volunteer)\s+)?experience)\s+/i,
+    ""
+  )
+}
+
+function collectPipeThenDateIndices(t: string): number[] {
+  const re = new RegExp(RX_PIPE_THEN_DATE.source, "gi")
+  const out: number[] = []
+  let m: RegExpExecArray | null
+  while ((m = re.exec(t)) !== null) {
+    out.push(m.index)
+  }
+  return out
+}
+
+function isLocationOnlyLine(s: string): boolean {
+  const u = s.trim()
+  if (u.length < 3 || u.length > 90) return false
+  if (!/,/.test(u)) return false
+  if (
+    /\b(?:Manager|Engineer|Director|Coordinator|Supervisor|Developer|Lead|Designer|Specialist|Consultant|Administrator|Intern|Volunteer|Analyst|Officer|Executive)\b/i.test(
+      u
+    )
+  ) {
+    return false
+  }
+  if (/^[●•]/.test(u)) return false
+  return /^[^,|]{1,60},\s*[^,|]{1,60}$/u.test(u)
+}
+
+/**
+ * In flat "One line" PDFs, the i-th job's line before "| Month Year" is often the
+ * last 1–2 double-space segments (title + org or title + "City, Country"). The
+ * previous split-on-double-space+lookahead was wrong: "  Omdurman, Sudan" looks
+ * like a new block because it is followed by "| March" on the *same* job line.
+ */
+function findNarrowHeaderBeforePipe(
+  t: string,
+  pipeIndex: number,
+  minFrom: number
+): number {
+  const before = t.slice(minFrom, pipeIndex).trimEnd()
+  if (!before.length) return minFrom
+  const parts = before
+    .split(/\s{2,}/)
+    .map((x) => x.trim())
+    .filter(Boolean)
+  const nonBullet = parts.filter(
+    (p) =>
+      !/^[●•▪·]/.test(p) &&
+      !/^(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z.]*\s+\d{4}\s*[–—\-]\s*(?:Present|Current|Now)\b/i.test(
+        p
+      ) &&
+      p.length < 500
+  )
+  if (!nonBullet.length) return minFrom
+  const last = nonBullet[nonBullet.length - 1]!
+  const secondLast = nonBullet[nonBullet.length - 2]
+  let n = 1
+  if (secondLast && isLocationOnlyLine(last)) n = 2
+  else if (secondLast && !isLocationOnlyLine(last)) {
+    if (last.length < 120 && secondLast.length < 120) n = 2
+  }
+  const headerParts = nonBullet.slice(-n)
+  const headerStr = headerParts.join("  ")
+  const at = before.lastIndexOf(headerStr)
+  if (at >= 0) return minFrom + at
+  return minFrom
+}
+
+function parseOneJobBlock(block: string): Experience | null {
+  let t = block.trim()
+  t = cleanLeadingExperienceWord(t)
+  t = t.replace(/^__EXP__\n?/i, "").replace(/^Experience\s+/i, "")
+  t = t.replace(/^[0-9]+[.\)]\s+/, "")
+  if (t.length < 5) return null
+  t = t.replace(/^[●•\s]+/u, "")
+  const datePipe = t.search(RX_PIPE_THEN_DATE)
+  if (datePipe < 0) {
+    return parseExperienceBlock(t)
+  }
+  const leftRaw = t.slice(0, datePipe).trim()
+  const right = t.slice(datePipe + 1).trim()
+  const dbl = leftRaw.split(/\s{2,}/).map((s) => s.trim()).filter(Boolean)
+  const { start, end, rest: afterDate } = parseDateRangeInText(right)
+  const description = afterDate
+    .split(/[●•]/g)
+    .map((s) => s.replace(/^[.)\s-]+/u, "").replace(/^\d+[.)]\s+/, "").trim())
+    .filter((s) => s.length > 2 && !/^responsibilities\b/i.test(s))
+    .join("\n\n")
+  let title = ""
+  let company = "—"
+  let location = ""
+  if (dbl.length === 1) {
+    const one = dbl[0]!
+    const dblsp = one.search(/\s{2,}[^|]+,\s*[^,|]+\s*$/i)
+    if (dblsp > 0) {
+      title = one.slice(0, dblsp).trim()
+      location = one.slice(dblsp).replace(/^\s+/, "").trim()
+    } else {
+      const placeComma = one.match(
+        /^(.+?)\s+([A-Z][a-z]+,(?:\s|\u00A0)*[A-Z][A-Za-z ]+)(?:\s*|\s*[-–]\s*.*)?$/i
+      )
+      if (placeComma) {
+        title = placeComma[1]!.trim()
+        location = placeComma[2]!.replace(/\s+/g, " ").trim()
+      } else {
+        const cityState = one.match(
+          /^(.+?)\s+([A-Z][a-z]+,\s*[A-Z][A-Za-z ]+)$/
+        )
+        if (cityState) {
+          title = cityState[1]!.trim()
+          location = cityState[2]!.trim()
+        } else {
+          const dash = one.split(/\s*[–—]\s+/).map((s) => s.trim())
+          if (dash.length >= 2) {
+            title = dash[0]!
+            company = dash.slice(1).join(" – ")
+          } else {
+            title = one
+          }
+        }
+      }
+    }
+  } else if (dbl.length === 2) {
+    const a = dbl[0]!
+    const b = dbl[1]!
+    title = a
+    if (/,/.test(b) && b.length < 90) {
+      location = b
+    } else if (/[–—]/.test(b) || /\b(Org|NGO|Office|ACTED|ZOA|Inc|LLC)\b/i.test(b)) {
+      company = b
+    } else {
+      company = b
+    }
+  } else {
+    title = dbl[0]!
+    if (dbl[1] && /,/.test(dbl[1]!)) {
+      location = dbl[1]!
+      company = dbl[2] ?? "—"
+    } else {
+      company = dbl[1] ?? "—"
+      if (dbl[2]) location = dbl[2]!
+    }
+  }
+  title = title
+    .replace(/^(?:(?:(?:work|volunteer|professional|relevant)\s+)?experience)\s+/i, "")
+    .replace(/^[●•\s]+/u, "")
+    .replace(/\s*Freelance\s*$/i, "")
+    .trim() || "—"
+  if (/^[●•\s-]+$/u.test(title) || /^(?:lead|develop|supervise|ensure|ensured|managed)\b/i.test(title)) {
+    return null
+  }
+  return {
+    id: nextId(),
+    title: title.slice(0, 200),
+    company: (company || "—").replace(/^[●•\s]+/u, "").trim(),
+    location: (location || "").replace(/^[●•\s]+/u, "").trim(),
+    startDate: start,
+    endDate: end,
+    description: description
+      .replace(/^\s*(?:[•\-–]\s*)+/u, "")
+      .trim()
+      .slice(0, 8000),
+  }
+}
+
+function splitExperienceSectionToJobs(s: string): string[] {
+  const t = cleanLeadingExperienceWord(
+    s.replace(/^__EXP__\n?/i, "").replace(/^Experience\s*/i, "")
+  ).trim()
+  if (t.length < 8) return []
+  const pipes = collectPipeThenDateIndices(t)
+  if (pipes.length === 0) {
+    return t.length > 20 ? [t] : []
+  }
+  if (pipes.length === 1) {
+    return [t]
+  }
+  const out: string[] = []
+  for (let i = 0; i < pipes.length; i++) {
+    const start =
+      i === 0
+        ? 0
+        : findNarrowHeaderBeforePipe(t, pipes[i]!, 0)
+    const end =
+      i < pipes.length - 1
+        ? findNarrowHeaderBeforePipe(t, pipes[i + 1]!, 0)
+        : t.length
+    const chunk = t.slice(start, end).trim()
+    if (chunk.length > 8) {
+      out.push(chunk)
+    }
+  }
+  return out.length ? out : t.length > 20 ? [t] : []
+}
+
+function parseExperiencesFromMarkerSections(
+  expBlock: string,
+  volBlock: string
+): Experience[] {
+  const joined = [expBlock, volBlock]
+    .filter(Boolean)
+    .join("\n\n")
+    .replace(/__VEX__\n?/g, "\n\n")
+  const jobs = splitExperienceSectionToJobs(joined)
+  const out: Experience[] = []
+  for (const j of jobs) {
+    if (/^responsibilities:/i.test(j) || /^references\b/i.test(j)) continue
+    const p = parseOneJobBlock(j) ?? parseExperienceBlock(j)
+    if (p) {
+      if (p.title && /^●/.test(p.title)) continue
+      if (p.title.length < 3 && p.description.length < 3) continue
+      out.push(p)
+    }
+  }
+  return out
+}
+
+function parseEducationMarkerSection(body: string): Education[] {
+  const t = body
+    .replace(/^\n*__EDU__\n*/i, "")
+    .replace(/^Education\s*/i, "")
+    .split(/__SKI__|__EXP__|__VEX__/i)[0]!
+    .trim()
+  if (t.length < 6) return []
+  if (
+    /@\S+@\S+/.test(t.split(/\n/)[0] ?? "") &&
+    t.length > 200 &&
+    !/Bachelor|Master|B\.?S\.?|B\.?A\.?|Diploma|Ph\.?D|Associate/i.test(
+      t.slice(0, 200)
+    )
+  ) {
+    return []
+  }
+  const oneLine = t.replace(/\s+/g, " ").replace(/^Education\s*/i, "").trim()
+  const bIdx = oneLine.search(
+    /\b(Bachelor|B\.?S\.?c?|B\.?A\.?|Master|M\.?S\.?|B\.?E\.?|Diploma|Ph\.?D|Doctorate|Associate|Certificate)\b/i
+  )
+  if (bIdx < 0) {
+    return parseEducationSection(t)
+  }
+  const before = oneLine.slice(0, bIdx).trim()
+  const after = oneLine.slice(bIdx).trim()
+  const sc = before.replace(/\s{2,}/g, " ").trim()
+  if (!/\b(University|College|Institute|Polytechnic|Academy|School)\b/i.test(sc)) {
+    return parseEducationSection(t)
+  }
+  const segs = after.split(/\s*\|/)
+  const degree = segs[0]!.replace(/\s{2,}/g, " ").trim()
+  const year = (segs[1] ?? "")
+    .replace(/Skills[\s\S]*/i, "")
+    .replace(/Experience[\s\S]*/i, "")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+  if (degree.length < 3) {
+    return parseEducationSection(t)
+  }
+  return [
+    {
+      id: nextId(),
+      school: sc.slice(0, 200),
+      degree: degree.slice(0, 220),
+      year: year.slice(0, 40),
+    },
+  ]
+}
+
+function parseSkillsMarkerSection(body: string): string[] {
+  const t = body.replace(/^\n*__SKI__\n*/i, "").replace(/^Skills\s*/i, "")
+  const fromBullets = t
+    .split(/[●•]/g)
+    .map((s) =>
+      s
+        .replace(/^\d+[\.\)]\s+/, "")
+        .replace(
+          /^(?:Engineering\s*&\s*Technical|Project Management|Administrative Operations?|Core)\s*Skills?$/i,
+          ""
+        )
+        .replace(/\s{2,}/g, " ")
+        .trim()
+    )
+    .filter((s) => s.length > 2 && s.length < 100 && /[A-Za-z]/.test(s))
+  if (fromBullets.length >= 2) return fromBullets.slice(0, 40)
+  return parseSkillsSection(t)
+}
+
+function tryParseWithSectionMarkers(
+  text: string
+): ParsedResumeFromText | null {
+  if (!/\b__EXP__\b/.test(text)) {
+    return null
+  }
+  const parts = text.split(
+    /__(SUM|EDU|SKI|EXP|VEX|TRN|REF)__/g
+  ) as string[]
+  const m = parseMarkerSplit(parts) as {
+    header: string
+    SUM?: string
+    EDU?: string
+    SKI?: string
+    EXP?: string
+    VEX?: string
+  }
+  const contacts = extractContacts(m.header)
+  const { fullName, jobTitle, location: locFromHeader } =
+    parseNameTitleFromHeader(m.header)
+  const email = contacts.email
+  const phone = contacts.phone
+  const linkedin = contacts.linkedin
+  const location = locFromHeader || pickLocation(m.header, fullName)
+  const bio = truncateBio(
+    stripUrlLike(
+      (m.SUM ?? "")
+        .replace(/^\n*__SUM__\n*/i, "")
+        .replace(/^\s*Summary\s*/i, "")
+        .trim()
+    ),
+    2000
+  )
+  const education = m.EDU
+    ? parseEducationMarkerSection(m.EDU)
+    : []
+  const skills = m.SKI ? parseSkillsMarkerSection(m.SKI) : []
+  const experiences = parseExperiencesFromMarkerSections(
+    m.EXP ?? "",
+    m.VEX ?? ""
+  )
+  return {
+    fullName,
+    jobTitle,
+    email,
+    phone,
+    linkedin,
+    location: location.replace(/\s+/g, " ").trim(),
+    bio,
+    education,
+    skills,
+    experiences,
+    usedFullTextFallback: false,
+  }
 }
 
 let idCounter = 0
@@ -415,6 +886,9 @@ function inferEducationFromText(text: string): Education[] {
   for (const c of text.split(/\n{2,}/)) {
     const t = c.trim()
     if (t.length < 15 || t.length > 500) continue
+    if (/^\s*summary\b/i.test(t) || /^civil engineering graduate/i.test(t)) {
+      continue
+    }
     if (!EDU_HINT.test(t) && !SCHOOL_HINT.test(t)) continue
     if (/^\d+[\s.]*years?\s+(?:at|with)/i.test(t)) continue
     const lines = t.split("\n").map((l) => l.trim()).filter(Boolean)
@@ -552,7 +1026,8 @@ function guessNameTitle(preamble: string) {
 
   const asLines = t.split("\n")
   if (asLines.length === 1 && asLines[0]!.length > 200) {
-    t = asLines[0]!.split(/\s{2,}|\s*[|•]\s*/)[0] ?? asLines[0]!
+    const beforeSummary = asLines[0]!.split(/\s{2,}Summary\s+/i)[0] ?? asLines[0]!
+    t = beforeSummary.split(/\s{2,}|\s*[|•]\s*/)[0] ?? beforeSummary
   }
 
   const lineArr = t
@@ -574,6 +1049,7 @@ function guessNameTitle(preamble: string) {
   let i = 0
   for (; i < lineArr.length; i++) {
     const line = lineArr[i]!
+    if (!isPlausibleNameLine(line)) continue
     if (EMAIL_RE.test(line) || /^\d[\d\s\-()]{8,}$/.test(line)) continue
     const wc = line.split(/\s+/).length
     if (wc >= 2 && wc <= 7 && !/@/.test(line) && !DATE_IN_LINE.test(line)) {
@@ -587,6 +1063,7 @@ function guessNameTitle(preamble: string) {
   if (i < lineArr.length) {
     const candidate = lineArr[i]!
     if (
+      isPlausibleNameLine(candidate) &&
       candidate.length > 0 &&
       candidate.length < 120 &&
       !EMAIL_RE.test(candidate) &&
@@ -597,7 +1074,7 @@ function guessNameTitle(preamble: string) {
       }
     }
   }
-  if (!fullName && lineArr[0] && lineArr[0]!.length < 100) {
+  if (!fullName && lineArr[0] && lineArr[0]!.length < 100 && isPlausibleNameLine(lineArr[0]!)) {
     fullName = lineArr[0]!
   }
   return { fullName, jobTitle }
@@ -649,8 +1126,17 @@ function scoreParse(r: {
 
 export function parseResumeTextToForm(raw: string): ParsedResumeFromText {
   idCounter = 0
-  let text = raw.replace(/\r\n/g, "\n").replace(/\r/g, "\n").replace(/\t/g, " ")
-  text = ensureNewlinesBeforeSectionKeywords(text)
+  const normalized = raw
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/\t/g, " ")
+  const cleaned = stripResumeFooterNoise(normalized)
+  const marked = insertSectionBoundaryMarkers(cleaned)
+  const fromMarkers = tryParseWithSectionMarkers(marked)
+  if (fromMarkers) {
+    return fromMarkers
+  }
+  const text = ensureNewlinesBeforeSectionKeywords(markersToNewlines(marked))
 
   const { email, phone, linkedin } = extractContacts(text)
   const lines = text.split("\n")
