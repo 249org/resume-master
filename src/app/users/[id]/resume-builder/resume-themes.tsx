@@ -56,6 +56,62 @@ function tint(hex: string, alpha: string) {
   return hex + alpha
 }
 
+/** Space between one role and the next in Experience (clearer than gap within bullets). */
+const EXPERIENCE_BLOCK_MARGIN_BOTTOM = "2.1rem"
+
+/**
+ * Renders job bullets as a real list (not pre-line paragraphs). Parser stores
+ * lines separated by newlines; strip stray "Responsibilities:" labels and bullet chars.
+ */
+function ExperienceDescription({
+  text,
+  listStyle,
+}: {
+  text: string
+  listStyle: React.CSSProperties
+}) {
+  const clean = text
+    .replace(/^\s*responsibilities:?\s*/i, "")
+    .replace(/\s*responsibilities:?\s*$/i, "")
+    .trim()
+  if (!clean) return null
+  const lines = clean
+    .split(/\n+/)
+    .map((l) =>
+      l
+        .replace(/^[•\-*▪·]\s*/u, "")
+        .replace(/\s*responsibilities:?\s*$/i, "")
+        .trim()
+    )
+    .filter((l) => l.length > 0 && !/^responsibilities:?$/i.test(l))
+  if (lines.length === 0) return null
+  return (
+    <ul
+      style={{
+        margin: 0,
+        paddingLeft: "1.15em",
+        listStyle: "disc",
+        listStylePosition: "outside",
+        listStyleType: "disc",
+        lineHeight: 1.45,
+        ...listStyle,
+      }}
+    >
+      {lines.map((line, i) => (
+        <li
+          key={i}
+          style={{
+            marginBottom: i < lines.length - 1 ? "0.3em" : 0,
+            paddingLeft: "0.15em",
+          }}
+        >
+          {line}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 // ─── Theme 1: Classic ──────────────────────────────────────────────────────────
 
 export function ClassicTheme({ data, colors }: { data: ResumeData; colors: ThemeColors }) {
@@ -108,7 +164,7 @@ export function ClassicTheme({ data, colors }: { data: ResumeData; colors: Theme
         <div style={{ marginBottom: '2rem' }}>
           {sectionHeader('Experience')}
           {data.experiences.map((exp) => (
-            <div key={exp.id} style={{ marginBottom: '1.4rem' }}>
+            <div key={exp.id} style={{ marginBottom: EXPERIENCE_BLOCK_MARGIN_BOTTOM }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <span style={{ fontSize: 12.5 }}>{exp.company}</span>
                 <span style={{ fontSize: 11, color: '#555' }}>{exp.location}</span>
@@ -120,9 +176,10 @@ export function ClassicTheme({ data, colors }: { data: ResumeData; colors: Theme
                 </span>
               </div>
               {exp.description && (
-                <div style={{ marginTop: 6, whiteSpace: 'pre-line', lineHeight: 1.8, fontSize: 12, color: '#333' }}>
-                  {exp.description}
-                </div>
+                <ExperienceDescription
+                  text={exp.description}
+                  listStyle={{ marginTop: 6, fontSize: 12, color: '#333' }}
+                />
               )}
             </div>
           ))}
@@ -187,13 +244,18 @@ export function OceanTheme({ data, colors }: { data: ResumeData; colors: ThemeCo
         <div style={{ marginBottom: '1.5rem' }}>
           <div style={{ background: accent, color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', padding: '4px 10px', marginBottom: '0.9rem' }}>Experience</div>
           {data.experiences.map((exp) => (
-            <div key={exp.id} style={{ marginBottom: '1rem', paddingLeft: 10 }}>
+            <div key={exp.id} style={{ marginBottom: EXPERIENCE_BLOCK_MARGIN_BOTTOM, paddingLeft: 10 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontWeight: 700, color: accent, fontSize: 13 }}>{exp.title}</span>
                 <span style={{ color: '#666', fontSize: 11 }}>{exp.startDate}{exp.endDate ? ` – ${exp.endDate}` : ''}</span>
               </div>
               {exp.company && <div style={{ color: '#555', fontSize: 11, marginTop: 1 }}>{exp.company}{exp.location ? `, ${exp.location}` : ''}</div>}
-              {exp.description && <div style={{ color: '#444', marginTop: 4, whiteSpace: 'pre-line', lineHeight: 1.7 }}>{exp.description}</div>}
+              {exp.description && (
+                <ExperienceDescription
+                  text={exp.description}
+                  listStyle={{ marginTop: 4, color: '#444', fontSize: 12, lineHeight: 1.5 }}
+                />
+              )}
             </div>
           ))}
         </div>
@@ -281,13 +343,18 @@ export function SidebarTheme({ data, colors }: { data: ResumeData; colors: Theme
         )}
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: sidebarBg, borderBottom: `2px solid ${accent}`, paddingBottom: 4, marginBottom: '1rem' }}>Experience</div>
         {data.experiences.map((exp) => (
-          <div key={exp.id} style={{ marginBottom: '1.1rem' }}>
+          <div key={exp.id} style={{ marginBottom: EXPERIENCE_BLOCK_MARGIN_BOTTOM }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
               <span style={{ fontWeight: 700, color: sidebarBg, fontSize: 13 }}>{exp.title}</span>
               <span style={{ fontSize: 10, color: '#64748b' }}>{exp.startDate}{exp.endDate ? ` – ${exp.endDate}` : ''}</span>
             </div>
             {exp.company && <div style={{ fontSize: 11, color: '#475569', marginTop: 1 }}>{exp.company}{exp.location ? ` · ${exp.location}` : ''}</div>}
-            {exp.description && <div style={{ fontSize: 11, color: '#475569', marginTop: 4, whiteSpace: 'pre-line', lineHeight: 1.7 }}>{exp.description}</div>}
+            {exp.description && (
+              <ExperienceDescription
+                text={exp.description}
+                listStyle={{ marginTop: 4, color: '#475569', fontSize: 11, lineHeight: 1.5 }}
+              />
+            )}
           </div>
         ))}
       </div>
@@ -330,13 +397,18 @@ export function BoldTheme({ data, colors }: { data: ResumeData; colors: ThemeCol
               <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 2 }}>Experience</div>
             </div>
             {data.experiences.map((exp) => (
-              <div key={exp.id} style={{ marginBottom: '1rem', paddingLeft: 14, borderLeft: '2px solid #f0f0f0' }}>
+              <div key={exp.id} style={{ marginBottom: EXPERIENCE_BLOCK_MARGIN_BOTTOM, paddingLeft: 14, borderLeft: '2px solid #f0f0f0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontWeight: 700, fontSize: 13 }}>{exp.title}</span>
                   <span style={{ color: '#777', fontSize: 11 }}>{exp.startDate}{exp.endDate ? ` – ${exp.endDate}` : ''}</span>
                 </div>
                 {exp.company && <div style={{ color: accent, fontSize: 11, fontWeight: 600, marginTop: 1 }}>{exp.company}{exp.location ? ` · ${exp.location}` : ''}</div>}
-                {exp.description && <div style={{ color: '#555', marginTop: 4, whiteSpace: 'pre-line', lineHeight: 1.7 }}>{exp.description}</div>}
+                {exp.description && (
+                  <ExperienceDescription
+                    text={exp.description}
+                    listStyle={{ marginTop: 4, color: '#555', fontSize: 12, lineHeight: 1.5 }}
+                  />
+                )}
               </div>
             ))}
           </div>
@@ -407,13 +479,18 @@ export function MinimalTheme({ data, colors }: { data: ResumeData; colors: Theme
         <div style={{ marginBottom: '1.75rem' }}>
           <div style={{ fontSize: 9, letterSpacing: 4, textTransform: 'uppercase', color: accent, marginBottom: '0.75rem', fontWeight: 600 }}>Experience</div>
           {data.experiences.map((exp) => (
-            <div key={exp.id} style={{ marginBottom: '1rem' }}>
+            <div key={exp.id} style={{ marginBottom: EXPERIENCE_BLOCK_MARGIN_BOTTOM }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontWeight: 600 }}>{exp.title}{exp.company ? <span style={{ fontWeight: 400, color: '#555' }}>, {exp.company}</span> : null}</span>
                 <span style={{ color: '#888', fontSize: 11 }}>{exp.startDate}{exp.endDate ? ` – ${exp.endDate}` : ''}</span>
               </div>
               {exp.location && <div style={{ color: '#999', fontSize: 10, marginBottom: 2 }}>{exp.location}</div>}
-              {exp.description && <div style={{ color: '#555', lineHeight: 1.7, whiteSpace: 'pre-line', marginTop: 3 }}>{exp.description}</div>}
+              {exp.description && (
+                <ExperienceDescription
+                  text={exp.description}
+                  listStyle={{ marginTop: 3, color: '#555', fontSize: 12, lineHeight: 1.5 }}
+                />
+              )}
             </div>
           ))}
           <div style={{ borderBottom: '1px solid #e8e8e8', marginTop: 6 }} />
@@ -479,13 +556,18 @@ export function ExecutiveTheme({ data, colors }: { data: ResumeData; colors: The
               <div style={{ flex: 1, height: 1, background: accent }} />
             </div>
             {data.experiences.map((exp) => (
-              <div key={exp.id} style={{ marginBottom: '1.1rem' }}>
+              <div key={exp.id} style={{ marginBottom: EXPERIENCE_BLOCK_MARGIN_BOTTOM }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                   <span style={{ fontWeight: 700, fontSize: 13 }}>{exp.title}</span>
                   <span style={{ color: '#777', fontSize: 11 }}>{exp.startDate}{exp.endDate ? ` – ${exp.endDate}` : ''}</span>
                 </div>
                 {exp.company && <div style={{ color: accent, fontSize: 11, fontStyle: 'italic', marginTop: 1 }}>{exp.company}{exp.location ? `, ${exp.location}` : ''}</div>}
-                {exp.description && <div style={{ color: '#444', marginTop: 5, whiteSpace: 'pre-line', lineHeight: 1.7 }}>{exp.description}</div>}
+                {exp.description && (
+                  <ExperienceDescription
+                    text={exp.description}
+                    listStyle={{ marginTop: 5, color: '#444', fontSize: 12, lineHeight: 1.5 }}
+                  />
+                )}
               </div>
             ))}
           </div>
