@@ -58,3 +58,4 @@ for key in "${KEYS[@]}"; do
 done
 
 echo "Done. Verify in Cloudflare dashboard → Workers & Pages → resume-master → Settings → Variables and Secrets."
+echo "Tip: keep a copy of this file for production; \`npm run deploy\` re-runs this step so secrets stay attached to the Worker."

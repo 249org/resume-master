@@ -48,7 +48,7 @@ export function ManualImportStep({
     <div className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col space-y-6">
       <PageTitle
         title="How would you like to start?"
-        subtitle="Open a blank document and fill in each section, or import a PDF or Word file — we'll pull text into your bio so you can paste it into the right fields. Everything stays in your browser until you save."
+        subtitle="Open a blank document and fill in each section, or import a PDF or Word file. We detect common section headings (Summary, Experience, Education, Skills) and split text into the right fields — you can always edit after. Nothing is uploaded until you save."
       />
 
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8 lg:items-stretch">
@@ -85,7 +85,7 @@ export function ManualImportStep({
             </div>
             <CardTitle className="text-lg">Import from a file</CardTitle>
             <CardDescription>
-              PDF or DOCX, up to 5&nbsp;MB. Text is extracted locally and prefilled in your bio as a
+              PDF or DOCX, up to 5&nbsp;MB. Text is extracted locally and mapped into your builder
               draft — you still structure the resume yourself.
             </CardDescription>
           </CardHeader>
@@ -106,7 +106,7 @@ export function ManualImportStep({
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-foreground">{uploadedFile.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {uploadedText ? 'Ready — open the editor with this text in your bio' : 'Extracting text…'}
+                    {uploadedText ? 'Ready — open the editor with fields prefilled' : 'Extracting text…'}
                   </p>
                 </div>
                 <button

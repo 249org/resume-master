@@ -46,6 +46,7 @@ import {
   type SavedResume,
 } from '@/lib/resume-storage'
 import { extractTextFromFile, checkFile } from '@/lib/resume-extract'
+import { parseResumeTextToForm } from '@/lib/parse-resume-text'
 import { ManualImportStep } from './manual-import-step'
 
 type BuilderView = 'manual-upload' | 'building'
@@ -150,17 +151,34 @@ function ResumeBuilderContent() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  // ── Manual continue: use extracted text as a starting reference (no AI) ──
+  // ── Manual continue: heuristic parse into contact, summary, experience, education, skills ──
   const handleManualContinue = () => {
     if (!uploadedText.trim()) return
     setImportBusy(true)
     setParseError(null)
     try {
-      const t = uploadedText.trim()
-      const max = 8000
-      setBio((prev) => (prev.trim() ? prev : t.slice(0, max)))
+      const max = 50_000
+      const raw =
+        uploadedText.length > max ? uploadedText.slice(0, max) : uploadedText
+      const p = parseResumeTextToForm(raw)
+      if (p.fullName) setFullName(p.fullName)
+      if (p.jobTitle) setJobTitle(p.jobTitle)
+      if (p.bio) setBio(p.bio)
+      if (p.email) setEmail(p.email)
+      if (p.phone) setPhone(p.phone)
+      if (p.location) setLocation(p.location)
+      if (p.linkedin) setLinkedin(p.linkedin)
+      if (p.experiences.length) setExperiences(p.experiences)
+      if (p.education.length) setEducation(p.education)
+      if (p.skills.length) setSkillsList(p.skills)
       setView('building')
       clearUpload()
+    } catch (e) {
+      setParseError(
+        e instanceof Error
+          ? e.message
+          : 'Could not parse your resume. Try editing sections manually.'
+      )
     } finally {
       setImportBusy(false)
     }
