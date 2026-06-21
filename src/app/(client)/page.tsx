@@ -51,8 +51,8 @@ export default async function page() {
           </span>
         </h1>
         <p className="text-muted-foreground mt-6 max-w-xl text-center text-lg leading-relaxed">
-          Check how your resume lines up with applicant tracking systems, then
-          refine it in the manual builder — no paid APIs required.
+          Check how your resume lines up with applicant tracking systems, refine it in the builder,
+          or get AI-powered feedback when you&apos;re signed in.
         </p>
         <HomeAtsCheck homeUserId={homeUserId} className="mt-10 w-full max-w-xl" />
       </section>

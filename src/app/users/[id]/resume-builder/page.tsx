@@ -22,6 +22,7 @@ import {
   Trash2,
   ChevronUp,
   ChevronDown,
+  ChevronLeft,
   Download,
   Save,
   Wand2,
@@ -48,8 +49,11 @@ import {
 import { extractTextFromFile, checkFile } from '@/lib/resume-extract'
 import { parseResumeTextToForm } from '@/lib/parse-resume-text'
 import { ManualImportStep } from './manual-import-step'
+import { EntryStep } from './entry-step'
+import { AiImportStep } from './ai-import-step'
+import type { ParsedData, ParseApiResponse } from './parsed-data'
 
-type BuilderView = 'manual-upload' | 'building'
+type BuilderView = 'entry' | 'ai-setup' | 'manual-upload' | 'building'
 
 // ── Color presets ──────────────────────────────────────────────────────────
 
@@ -70,12 +74,22 @@ function ResumeBuilderContent() {
   const editId = searchParams.get('id')
 
   // ── View state ────────────────────────────────────────────────────────
-  const [view, setView] = useState<BuilderView>(editId ? 'building' : 'manual-upload')
+  const [view, setView] = useState<BuilderView>(editId ? 'building' : 'entry')
 
+  const [aiStep, setAiStep] = useState<1 | 2>(1)
+  const [aiJobTarget, setAiJobTarget] = useState('')
+  const [aiJobDesc, setAiJobDesc] = useState('')
+  const [aiDescExpanded, setAiDescExpanded] = useState(false)
+  const [aiFullName, setAiFullName] = useState('')
+  const [aiEmail, setAiEmail] = useState('')
+  const [aiPhone, setAiPhone] = useState('')
+  const [aiLocation, setAiLocation] = useState('')
+  const [aiLinkedin, setAiLinkedin] = useState('')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [uploadedText, setUploadedText] = useState('')
   const [isDragging, setIsDragging] = useState(false)
   const [importBusy, setImportBusy] = useState(false)
+  const [parseLoading, setParseLoading] = useState(false)
   const [parseError, setParseError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -149,6 +163,73 @@ function ResumeBuilderContent() {
     setUploadedText('')
     setParseError(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const applyParsedData = (data: ParsedData) => {
+    if (data.fullName) setFullName(data.fullName)
+    if (data.jobTitle) setJobTitle(data.jobTitle)
+    if (data.email) setEmail(data.email)
+    if (data.phone) setPhone(data.phone)
+    if (data.location) setLocation(data.location)
+    if (data.linkedin) setLinkedin(data.linkedin)
+    if (data.experiences?.length) {
+      setExperiences(
+        data.experiences.map((e, i) => ({
+          id: Date.now() + i,
+          title: e.title ?? '',
+          company: e.company ?? '',
+          location: e.location ?? '',
+          startDate: e.startDate ?? '',
+          endDate: e.endDate ?? '',
+          description: e.description ?? '',
+        }))
+      )
+    }
+    if (data.education?.length) {
+      setEducation(
+        data.education.map((e, i) => ({
+          id: Date.now() + i + 1000,
+          degree: e.degree ?? '',
+          school: e.school ?? '',
+          year: e.year ?? '',
+        }))
+      )
+    }
+    if (data.skills?.length) setSkillsList(data.skills)
+  }
+
+  const handleGenerateWithAI = async () => {
+    if (!aiJobTarget.trim()) return
+    setParseLoading(true)
+    setParseError(null)
+    const jobDescAddition = aiJobDesc.trim()
+      ? `\n\nJob description:\n${aiJobDesc.trim()}`
+      : ''
+    try {
+      const res = await fetch('/api/resume-builder/parse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resumeText: uploadedText + jobDescAddition,
+          jobTarget: aiJobTarget.trim(),
+          mode: 'ai',
+        }),
+      })
+      const json = (await res.json()) as ParseApiResponse
+      if (!res.ok || json.error) throw new Error(json.error || 'Failed to generate resume')
+      if (json.data) applyParsedData(json.data)
+      if (aiFullName.trim()) setFullName(aiFullName.trim())
+      if (aiEmail.trim()) setEmail(aiEmail.trim())
+      if (aiPhone.trim()) setPhone(aiPhone.trim())
+      if (aiLocation.trim()) setLocation(aiLocation.trim())
+      if (aiLinkedin.trim()) setLinkedin(aiLinkedin.trim())
+      clearUpload()
+      setView('building')
+    } catch (e) {
+      setParseError(e instanceof Error ? e.message : 'An error occurred. Please try again.')
+    } finally {
+      setParseLoading(false)
+    }
   }
 
   // ── Manual continue: heuristic parse into contact, summary, experience, education, skills ──
@@ -260,9 +341,80 @@ function ResumeBuilderContent() {
     setTimeout(() => setIsPrinting(false), 2500)
   }
 
+  if (view === 'entry') {
+    return (
+      <EntryStep
+        onCreateWithAi={() => {
+          setAiStep(1)
+          setView('ai-setup')
+        }}
+        onBuildManually={() => setView('manual-upload')}
+      />
+    )
+  }
+
+  if (view === 'ai-setup') {
+    return (
+      <AiImportStep
+        aiStep={aiStep}
+        aiJobTarget={aiJobTarget}
+        setAiJobTarget={setAiJobTarget}
+        aiJobDesc={aiJobDesc}
+        setAiJobDesc={setAiJobDesc}
+        aiDescExpanded={aiDescExpanded}
+        setAiDescExpanded={setAiDescExpanded}
+        aiFullName={aiFullName}
+        setAiFullName={setAiFullName}
+        aiEmail={aiEmail}
+        setAiEmail={setAiEmail}
+        aiPhone={aiPhone}
+        setAiPhone={setAiPhone}
+        aiLocation={aiLocation}
+        setAiLocation={setAiLocation}
+        aiLinkedin={aiLinkedin}
+        setAiLinkedin={setAiLinkedin}
+        uploadedFile={uploadedFile}
+        uploadedText={uploadedText}
+        isDragging={isDragging}
+        setIsDragging={setIsDragging}
+        parseLoading={parseLoading}
+        parseError={parseError}
+        fileInputRef={fileInputRef}
+        onBack={() => {
+          if (aiStep === 2) {
+            setAiStep(1)
+            setParseError(null)
+          } else {
+            setView('entry')
+            clearUpload()
+            setParseError(null)
+          }
+        }}
+        onNextStep={() => setAiStep(2)}
+        onGenerate={handleGenerateWithAI}
+        onFileInputChange={(f) => handleFile(f)}
+        onDropFile={(f) => handleFile(f)}
+        onZoneClick={() => fileInputRef.current?.click()}
+        onClearUpload={clearUpload}
+      />
+    )
+  }
+
   if (view === 'manual-upload') {
     return (
-      <ManualImportStep
+      <div className="space-y-4">
+        <button
+          type="button"
+          onClick={() => {
+            setView('entry')
+            clearUpload()
+            setParseError(null)
+          }}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ChevronLeft className="h-4 w-4" /> Back
+        </button>
+        <ManualImportStep
         uploadedFile={uploadedFile}
         uploadedText={uploadedText}
         isDragging={isDragging}
@@ -277,6 +429,7 @@ function ResumeBuilderContent() {
         onContinueWithResume={handleManualContinue}
         onStartBlank={handleManualSkip}
       />
+      </div>
     )
   }
 
@@ -306,7 +459,7 @@ function ResumeBuilderContent() {
               variant="outline"
               size="sm"
               className="gap-1.5 text-xs"
-              onClick={() => setView('manual-upload')}
+              onClick={() => setView('entry')}
             >
               <Upload className="h-3.5 w-3.5" />
               Import from file

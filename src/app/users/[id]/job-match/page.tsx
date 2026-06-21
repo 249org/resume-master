@@ -9,8 +9,8 @@ import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { JobTypeCombobox } from '@/components/job-type-combobox'
-import { Upload, CloudUpload, AlertTriangle, CheckCircle, BarChart2, FileText } from '@/components/icons'
-import { Loader2, X, FolderOpen, Trash2 } from 'lucide-react'
+import { Upload, CloudUpload, AlertTriangle, CheckCircle, BarChart2, FileText, Sparkles } from '@/components/icons'
+import { Loader2, X, FolderOpen, Trash2, Cpu, Brain } from 'lucide-react'
 import PageTitle from '@/components/page-title'
 import { JOB_TYPES } from '@/lib/job-types'
 import { extractTextFromFile, checkFile } from '@/lib/resume-extract'
@@ -24,8 +24,17 @@ import {
 
 let pendingAtsAnalyzeInFlight = false
 
+type AnalysisMode = 'ats' | 'ai'
+
+interface AiReport {
+  summary: string
+  suggestions: string[]
+}
+
 interface AnalyzeResponse {
   atsReport?: AtsReport | null
+  aiReport?: AiReport | null
+  aiError?: string
   analysisId?: string
   error?: string
 }
@@ -163,11 +172,14 @@ function JobMatchPage() {
   const [resumeText, setResumeText] = useState<string | null>(null)
   const [fileName, setFileName] = useState<string | null>(null)
   const [jobTypeId, setJobTypeId] = useState<string>('')
+  const [mode, setMode] = useState<AnalysisMode>('ai')
   const [isDragging, setIsDragging] = useState(false)
   const [extractError, setExtractError] = useState<string | null>(null)
   const [isExtracting, setIsExtracting] = useState(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [atsReport, setAtsReport] = useState<AtsReport | null>(null)
+  const [aiReport, setAiReport] = useState<AiReport | null>(null)
+  const [aiError, setAiError] = useState<string | null>(null)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
   const [uploadOpen, setUploadOpen] = useState(false)
   const [uploadModalTab, setUploadModalTab] = useState<'upload' | 'saved'>('upload')
@@ -180,7 +192,9 @@ function JobMatchPage() {
   const [detailLoading, setDetailLoading] = useState(false)
 
   const hasResume = !!resumeText?.length
-  const hasResults = atsReport != null
+  const hasAtsResults = atsReport != null
+  const hasAiResults = aiReport != null || aiError != null
+  const hasResults = (mode === 'ats' && hasAtsResults) || (mode === 'ai' && hasAiResults)
   const showListView = analysisId === null
 
   const fetchList = useCallback(async () => {
@@ -238,6 +252,7 @@ function JobMatchPage() {
         resumeText: payload.resumeText,
         jobTypeId: payload.jobTypeId,
         fileName: payload.fileName,
+        mode: 'ai',
       }),
     })
       .then(async (res) => {
@@ -261,6 +276,8 @@ function JobMatchPage() {
         }
         if (data.analysisId) setAnalysisId(data.analysisId)
         setAtsReport(data.atsReport ?? null)
+        setAiReport(data.aiReport ?? null)
+        if (data.aiError) setAiError(data.aiError)
         router.replace(pathname, { scroll: false })
       })
       .catch(() => {
@@ -290,11 +307,17 @@ function JobMatchPage() {
           fileName?: string
           jobTypeId?: string
           jobTypeLabel?: string
+          mode?: AnalysisMode
           atsReport?: AtsReport | null
+          aiReport?: AiReport | null
+          aiError?: string | null
         }
         setFileName(d.fileName ?? null)
         setJobTypeId(d.jobTypeId ?? '')
+        setMode(d.mode ?? 'ai')
         setAtsReport(d.atsReport ?? null)
+        setAiReport(d.aiReport ?? null)
+        setAiError(d.aiError ?? null)
         setAnalysisError(null)
       })
       .catch(() => setAnalysisError('Failed to load analysis.'))
@@ -308,7 +331,7 @@ function JobMatchPage() {
   const handleFile = useCallback(async (file: File | null) => {
     if (!file) {
       setResumeText(null); setFileName(null); setExtractError(null); setSavedResumeId(null)
-      setAtsReport(null); setAnalysisError(null)
+      setAtsReport(null); setAiReport(null); setAiError(null); setAnalysisError(null)
       return
     }
     const err = checkFile(file)
@@ -360,6 +383,7 @@ function JobMatchPage() {
     if (!resumeText?.trim() || !jobTypeId.trim()) return
     setIsAnalyzing(true)
     setAnalysisError(null)
+    setAiError(null)
     try {
       const res = await fetch('/api/job-match/analyze', {
         method: 'POST',
@@ -367,6 +391,7 @@ function JobMatchPage() {
         body: JSON.stringify({
           resumeText: resumeText.trim(),
           jobTypeId,
+          mode,
           fileName: fileName ?? undefined,
         }),
       })
@@ -376,6 +401,8 @@ function JobMatchPage() {
         return
       }
       setAtsReport(data.atsReport ?? null)
+      setAiReport(data.aiReport ?? null)
+      if (data.aiError) setAiError(data.aiError)
       if (data.analysisId) {
         setAnalysisId(data.analysisId)
         setUploadOpen(false)
@@ -390,6 +417,8 @@ function JobMatchPage() {
   const goToList = () => {
     setAnalysisId(null)
     setAtsReport(null)
+    setAiReport(null)
+    setAiError(null)
     setAnalysisError(null)
     setFileName(null)
     setResumeText(null)
@@ -399,6 +428,8 @@ function JobMatchPage() {
 
   const openAnalysis = (id: string) => {
     setAtsReport(null)
+    setAiReport(null)
+    setAiError(null)
     setAnalysisError(null)
     setAnalysisId(id)
   }
@@ -515,7 +546,7 @@ function JobMatchPage() {
                               variant="outline"
                               className="text-muted-foreground h-5 border-border/80 px-2 text-[10px] font-normal uppercase tracking-wide"
                             >
-                              {item.mode === 'ai' ? 'Legacy' : 'ATS'}
+                              {item.mode === 'ai' ? 'AI' : 'ATS'}
                             </Badge>
                           </div>
                         </div>
@@ -572,8 +603,17 @@ function JobMatchPage() {
               </div>
               <div className="flex flex-wrap items-center gap-2 sm:border-border/60 sm:border-l sm:pl-4">
                 <JobTypeCombobox value={jobTypeId} onChange={setJobTypeId} compact />
-                <Badge variant="secondary" className="h-6 px-2 text-[10px] font-normal">
-                  ATS scan
+                <Badge
+                  variant="secondary"
+                  className={cn(
+                    'h-6 gap-1 px-2 text-[10px] font-normal',
+                    mode === 'ats'
+                      ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                      : 'bg-primary/10 text-primary'
+                  )}
+                >
+                  {mode === 'ats' ? <Cpu className="h-3 w-3" /> : <Brain className="h-3 w-3" />}
+                  {mode === 'ats' ? 'ATS' : 'AI'}
                 </Badge>
               </div>
             </div>
@@ -603,7 +643,7 @@ function JobMatchPage() {
             </Card>
           )}
 
-          {atsReport && (
+          {mode === 'ats' && atsReport && (
             <>
               <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
                 <Card className="col-span-1 flex flex-col items-center justify-center gap-4 rounded-2xl border border-border/80 bg-card py-10 shadow-sm">
@@ -658,10 +698,49 @@ function JobMatchPage() {
             </>
           )}
 
-          {!atsReport && !analysisError && !detailLoading && (
+          {mode === 'ai' && (
+            <>
+              {aiError && !aiReport && (
+                <Card className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 shadow-sm">
+                  <p className="font-medium text-destructive">AI analysis unavailable</p>
+                  <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{aiError}</p>
+                  <p className="text-muted-foreground mt-2 text-xs">
+                    Check OPENAI_API_KEY or try ATS-only analysis.
+                  </p>
+                </Card>
+              )}
+              {aiReport && (
+                <>
+                  <Card className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
+                    <div className="mb-4 flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                        <Brain className="text-primary h-4 w-4" />
+                      </div>
+                      <span className="text-foreground text-sm font-semibold">AI overview</span>
+                    </div>
+                    <p className="text-foreground text-sm leading-relaxed">{aiReport.summary}</p>
+                  </Card>
+                  <section className="flex flex-col gap-3">
+                    <SectionHeading
+                      icon={<Sparkles className="text-primary h-4 w-4" />}
+                      label="How to improve"
+                      count={aiReport.suggestions.length}
+                    />
+                    {aiReport.suggestions.length > 0
+                      ? aiReport.suggestions.map((text, i) => (
+                          <DetailCard key={i} variant="ai" text={text} badge="AI" />
+                        ))
+                      : <DetailCard variant="muted" text="No additional suggestions." />}
+                  </section>
+                </>
+              )}
+            </>
+          )}
+
+          {!hasResults && !analysisError && !detailLoading && (
             <Card className="rounded-2xl border border-border/80 bg-card p-6 text-center shadow-sm">
               <p className="text-muted-foreground text-sm">
-                No ATS report loaded for this analysis.
+                No {mode === 'ats' ? 'ATS' : 'AI'} report loaded for this analysis.
               </p>
             </Card>
           )}
@@ -674,7 +753,7 @@ function JobMatchPage() {
           <DialogHeader className="space-y-2 text-left">
             <DialogTitle className="text-lg font-semibold tracking-tight">New analysis</DialogTitle>
             <DialogDescription className="text-muted-foreground text-sm leading-relaxed">
-              Add a resume, select the target role, then run an ATS check. Nothing is shared until you start the run.
+              Add a resume, select the target role, then run an ATS or AI analysis.
             </DialogDescription>
           </DialogHeader>
 
@@ -774,13 +853,54 @@ function JobMatchPage() {
                   <label className="text-foreground mb-2 block text-xs font-semibold">Target role</label>
                   <JobTypeCombobox value={jobTypeId} onChange={setJobTypeId} />
                 </div>
+                <div>
+                  <label className="text-foreground mb-2 block text-xs font-semibold">Analysis</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setMode('ats')}
+                      className={cn(
+                        'flex items-center gap-2 rounded-lg border p-3 text-left text-sm transition-colors',
+                        mode === 'ats'
+                          ? 'border-amber-500/30 bg-amber-500/10'
+                          : 'border-border hover:bg-muted/30'
+                      )}
+                    >
+                      <Cpu
+                        className={cn(
+                          'h-4 w-4',
+                          mode === 'ats'
+                            ? 'text-amber-600 dark:text-amber-400'
+                            : 'text-muted-foreground'
+                        )}
+                      />
+                      ATS only
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMode('ai')}
+                      className={cn(
+                        'flex items-center gap-2 rounded-lg border p-3 text-left text-sm transition-colors',
+                        mode === 'ai' ? 'border-primary bg-primary/10' : 'border-border hover:bg-muted/30'
+                      )}
+                    >
+                      <Brain
+                        className={cn(
+                          'h-4 w-4',
+                          mode === 'ai' ? 'text-primary' : 'text-muted-foreground'
+                        )}
+                      />
+                      AI review
+                    </button>
+                  </div>
+                </div>
                 <Button onClick={analyze} disabled={!canAnalyze} className="w-full shadow-sm" size="default">
                   {isAnalyzing ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Running…
                     </>
                   ) : (
-                    'Run ATS analysis'
+                    `Run ${mode === 'ats' ? 'ATS' : 'AI'} analysis`
                   )}
                 </Button>
               </div>
@@ -831,9 +951,11 @@ function SectionHeading({
 function DetailCard({
   text,
   variant,
+  badge,
 }: {
   text: string
   variant: 'success' | 'warning' | 'default' | 'ai' | 'muted'
+  badge?: string
 }) {
   return (
     <div
@@ -843,11 +965,20 @@ function DetailCard({
           'border border-emerald-500/20 border-l-[3px] border-l-emerald-600/60 bg-emerald-500/[0.04] text-foreground dark:border-l-emerald-400/70',
         variant === 'warning' &&
           'border border-amber-500/20 border-l-[3px] border-l-amber-600/60 bg-amber-500/[0.04] text-foreground dark:border-l-amber-400/70',
-        (variant === 'default' || variant === 'ai') && 'border-border/80 bg-card text-foreground border',
+        variant === 'default' && 'border-border/80 bg-card text-foreground border',
+        variant === 'ai' && 'border border-primary/20 bg-primary/5 text-foreground',
         variant === 'muted' && 'border-border/60 bg-muted/30 text-muted-foreground border shadow-none'
       )}
     >
-      {text}
+      <div className="flex items-start gap-3">
+        {variant === 'ai' && <Sparkles className="text-primary mt-0.5 h-4 w-4 shrink-0" />}
+        <p className="flex-1">{text}</p>
+        {badge && (
+          <span className="shrink-0 rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+            {badge}
+          </span>
+        )}
+      </div>
     </div>
   )
 }
